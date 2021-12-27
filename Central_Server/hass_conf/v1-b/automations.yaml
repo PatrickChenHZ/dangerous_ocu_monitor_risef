@@ -1,0 +1,13 @@
+- id: '1640573762085'
+  alias: Notify Zone change to mqtt wb1
+  description: ''
+  trigger:
+  - platform: state
+    entity_id: sensor.band1
+  condition: []
+  action:
+  - service: mqtt.publish
+    data:
+      topic: clients/wb/wb1
+      payload_template: '{{ states(''sensor.band1'') }}'
+  mode: single

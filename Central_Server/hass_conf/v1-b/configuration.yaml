@@ -1,0 +1,54 @@
+
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+
+sensor 1:
+# One entry for each beacon you want to track
+  - platform: mqtt_room
+    #device_id: "c29ce823e67a4e71bff2abaa32e77a98-5-2" # Note that major version must match, but any minor version will be ignored
+    device_id: "246f2897a772" # Note that major version must match, but any minor version will be ignored
+    name: 'beacon1'
+    state_topic: 'room_presence'
+    timeout: 10
+    away_timeout: 20
+
+sensor 2:
+# One entry for each beacon you want to track
+  - platform: mqtt_room
+    #device_id: "c29ce823e67a4e71bff2abaa32e77a98-5-2" # Note that major version must match, but any minor version will be ignored
+    device_id: "d8a01d5b4636" # Note that major version must match, but any minor version will be ignored
+    name: 'band1'
+    state_topic: 'room_presence'
+    timeout: 10
+    away_timeout: 20
+
+
+binary_sensor 1:
+# One entry per sensor node to understand when the device is online/offline and see device metadata such as IP address and settings values
+  - platform: mqtt
+    name: HUB1_stats
+    state_topic: "presence_nodes/HUB1"
+    json_attributes_topic: "presence_nodes/esp32_hub_proto1/tele"
+    payload_on: "CONNECTED"
+    payload_off: "DISCONNECTED"
+    device_class: connectivity
+    
+binary_sensor 2:
+# One entry per sensor node to understand when the device is online/offline and see device metadata such as IP address and settings values
+  - platform: mqtt
+    name: HUB2_stats
+    state_topic: "presence_nodes/HUB2"
+    json_attributes_topic: "presence_nodes/esp32_hub_proto2/tele"
+    payload_on: "CONNECTED"
+    payload_off: "DISCONNECTED"
+    device_class: connectivity
