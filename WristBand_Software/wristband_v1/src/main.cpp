@@ -42,6 +42,14 @@ TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 PCF8563_Class rtc;
 WiFiManager wifiManager;
 
+
+//self
+String zone = "Unknown";
+
+//Static:
+String user = "Patr C.";
+
+
 //BLE beacon related
 BLEAdvertising *pAdvertising;
 String product_url = "null";
@@ -61,6 +69,67 @@ PubSubClient client(espClient);
 const char* ssid = "hub";
 const char* password = "20040317";
 
+
+void homescreen(){
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(2);
+  tft.drawString(user,0, 10);
+  tft.drawString(zone,0, 50);
+
+}
+
+void info(){
+
+}
+
+void notification(String background,String info,String type){
+  if(background == "black"){
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextColor(TFT_WHITE);
+  }
+  else if(background == "red"){
+    tft.fillScreen(TFT_RED);
+    tft.setTextColor(TFT_BLACK);
+  }
+  else if(background == "green"){
+    tft.fillScreen(TFT_GREEN);
+    tft.setTextColor(TFT_BLACK);
+  }
+  else if(background == "white"){
+    tft.fillScreen(TFT_WHITE);
+    tft.setTextColor(TFT_BLACK);
+  }
+  if(type == "zone"){
+    //reserved long zone name spitter
+    tft.setTextSize(2);
+    tft.drawString("Zone",0, 10);
+    tft.drawString("Change",0, 27);
+    tft.drawString("To",0, 44);
+    tft.drawString(zone,0,69);
+    //reserve another line for long zone name, minium distance for size 2 is 15
+  }
+  delay(5000);
+  homescreen();
+}
+
+void sleep(){
+  tft.writecommand(ST7735_DISPOFF);
+  tft.writecommand(ST7735_SLPIN);
+  delay(100); //for command to finish
+}
+
+void wake(){
+  //wakes up the LCD only
+  //tft.writecommand(ST7735_SLPOUT)
+  //tft.writecommand(ST7735_DISPON);
+  tft.init();
+  delay(150); //wait for voltage to stablize
+}
+
+void deepsleep(){
+
+}
 
 void setup_wifi() {
   delay(10);
@@ -98,16 +167,14 @@ void callback(char* topic, byte* message, unsigned int length) {
   if (String(topic) == "clients/wb/wb1") {
     Serial.print("Changing zone to ");
     Serial.println(messageTemp);
+    zone = messageTemp;
+    //TODO utilize objective coding and use server to determine color
     if(messageTemp == "HUB1"){
-      tft.fillScreen(TFT_BLACK);
-      tft.setTextColor(TFT_WHITE);
+      notification("green",zone,"zone");
     }
     else if(messageTemp == "HUB2"){
-      tft.fillScreen(TFT_RED);
-      tft.setTextColor(TFT_BLACK);
+      notification("red",zone,"zone");
     }
-    tft.drawString("Wristband v1.0-b",  0, tft.height() / 2 - 20);
-    tft.drawString(messageTemp,  0, tft.height() / 2  + 20);
   }
 }
 
@@ -130,12 +197,11 @@ void reconnect() {
   }
 }
 
-
 void setup() {
   Serial.begin(115200);
   // TFT
   tft.init();
-  tft.setRotation(1);
+  tft.setRotation(0);
   tft.setSwapBytes(true);
 
   tft.fillScreen(TFT_BLACK);
@@ -144,6 +210,8 @@ void setup() {
   tft.drawString("BLE beacon broadcasting",  0, tft.height() / 2  + 20);
 
   Serial.println("BOOTED");
+
+  homescreen();
 
   //WIFI
   setup_wifi();
@@ -158,7 +226,7 @@ void setup() {
   int count;
 
   // Create BLE device
-  BLEDevice::init("Beacon1");
+  BLEDevice::init("Band1");
 
   // Create BLE Server
   BLEServer *pServer = BLEDevice::createServer();
@@ -219,6 +287,7 @@ void setup() {
   Serial.println("Advertising started...");
 #endif
 
+  Serial.println("BLE all done.");
   delay(5000);
 
   // end BLE Beacon related
@@ -229,4 +298,6 @@ void loop() {
     reconnect();
   }
   client.loop();
+
+
 }
