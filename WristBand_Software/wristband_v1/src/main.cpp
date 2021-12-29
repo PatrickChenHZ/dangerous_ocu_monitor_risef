@@ -11,6 +11,7 @@
 #include "BLEDevice.h"
 #include "BLEUtils.h"
 #include "BLEServer.h"
+#include "myicons.h"
 
 //  git clone -b development https://github.com/tzapu/WiFiManager.git
 #include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
@@ -43,12 +44,13 @@ PCF8563_Class rtc;
 WiFiManager wifiManager;
 
 
-//self
+//Self
 String zone = "Unknown";
+char zonerating = 's';
 
-//Static:
+//Static
 String user = "Patr C.";
-
+char permitted = 's';
 
 //BLE beacon related
 BLEAdvertising *pAdvertising;
@@ -71,12 +73,18 @@ const char* password = "20040317";
 
 
 void homescreen(){
+  //text
   tft.fillScreen(TFT_BLACK);
   tft.setTextColor(TFT_WHITE);
   tft.setTextSize(2);
   tft.drawString(user,0, 10);
   tft.drawString(zone,0, 50);
-
+  //icons border
+  tft.drawRect(0,120,40,40,TFT_WHITE);
+  tft.drawRect(40,120,40,40,TFT_WHITE);
+  //icons
+  tft.drawXBitmap(2,122,syncalr,36,36,TFT_WHITE,TFT_BLACK);
+  tft.drawXBitmap(42,122,personalr,36,36,TFT_WHITE,TFT_BLACK);
 }
 
 void info(){
