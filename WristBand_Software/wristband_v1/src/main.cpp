@@ -43,8 +43,14 @@ WiFiManager wifiManager;
 
 
 //Self
-String zone = "Unknown";
+String zone = "N/A";
 char zonerating = 's';
+uint32_t timeout = 0;
+bool timeoutbol = true;
+uint8_t hh, mm, ss ;
+
+bool slept= false;
+String chour,cminute;
 
 //Static
 String user = "Patr C.";
@@ -66,6 +72,49 @@ const char* ssid = "hub";
 const char* password = "20040317";
 
 
+void setupRTC()
+{
+  rtc.begin(Wire);
+  //Check if the RTC clock matches, if not, use compile time
+  //rtc.check();
+  RTC_Date datetime = rtc.getDateTime();
+  hh = datetime.hour;
+  mm = datetime.minute;
+  ss = datetime.second;
+  rtc.setDateTime(2021, 12, 30, 14, 45, 3);
+}
+
+void settimeout(int period){
+
+}
+
+void clockscreen(){
+  RTC_Date datetime = rtc.getDateTime();
+  hh = datetime.hour;
+  mm = datetime.minute;
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(4);
+  tft.drawNumber(hh,20, tft.width()-22);
+  tft.drawNumber(mm,20, tft.width()+22);
+
+}
+
+void wake(){
+  //wakes up the LCD only
+  tft.writecommand(ST7735_SLPOUT);
+  delay(100);
+  tft.writecommand(ST7735_DISPON);
+  tft.init();
+  delay(150); //wait for voltage to stablize
+}
+
+void sleep(){
+  tft.writecommand(ST7735_DISPOFF);
+  tft.writecommand(ST7735_SLPIN);
+  delay(100); //for command to finish
+}
+
 void homescreen(){
   //text
   tft.fillScreen(TFT_BLACK);
@@ -79,6 +128,11 @@ void homescreen(){
   //icons
   tft.drawXBitmap(2,122,syncalr,36,36,TFT_WHITE,TFT_BLACK);
   tft.drawXBitmap(42,122,personalr,36,36,TFT_WHITE,TFT_BLACK);
+  Serial.println(rtc.getDateTime().second);
+  timeout = rtc.getDateTime().second + 10;
+  Serial.print("timeout at:");
+  Serial.println(timeout);
+  timeoutbol = false;
 }
 
 void info(){
@@ -86,6 +140,11 @@ void info(){
 }
 
 void notification(String background,String info,String type){
+  if(slept){
+    wake();
+    slept = false;
+    Serial.println("Wake up by event");
+  }
   if(background == "black"){
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_WHITE);
@@ -113,20 +172,6 @@ void notification(String background,String info,String type){
   }
   delay(5000);
   homescreen();
-}
-
-void sleep(){
-  tft.writecommand(ST7735_DISPOFF);
-  tft.writecommand(ST7735_SLPIN);
-  delay(100); //for command to finish
-}
-
-void wake(){
-  //wakes up the LCD only
-  //tft.writecommand(ST7735_SLPOUT)
-  //tft.writecommand(ST7735_DISPON);
-  tft.init();
-  delay(150); //wait for voltage to stablize
 }
 
 void deepsleep(){
@@ -171,10 +216,10 @@ void callback(char* topic, byte* message, unsigned int length) {
     Serial.println(messageTemp);
     zone = messageTemp;
     //TODO utilize objective coding and use server to determine color
-    if(messageTemp == "HUB1"){
+    if(messageTemp == "Wshop1"){
       notification("green",zone,"zone");
     }
-    else if(messageTemp == "HUB2"){
+    else if(messageTemp == "Lab1"){
       notification("red",zone,"zone");
     }
   }
@@ -208,29 +253,52 @@ void setup() {
 
   tft.fillScreen(TFT_BLACK);
   tft.setTextColor(TFT_WHITE);
-  tft.drawString("Wristband v1.0-c BOOTED",  0, tft.height() / 2 - 20);
-  tft.drawString("BLE beacon broadcasting",  0, tft.height() / 2  + 20);
-
-  Serial.println("BOOTED");
-
-  homescreen();
+  tft.drawString("Wristband v1.0",  0, tft.height() / 2 - 20);
+  tft.drawString("BLE OK",  0, tft.height() / 2  + 20);
+  tft.drawString("BOOTED",  0, tft.height() / 2  + 60);
+;
 
   //WIFI
   setup_wifi();
   //MQTT
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
+  //rtc
+  Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+  Wire.setClock(400000); //I2C frequency
+  //touch pad
+  pinMode(TP_PIN_PIN, INPUT);
+  //! Must be set to pull-up output mode in order to wake up in deep sleep mode
+  pinMode(TP_PWR_PIN, PULLUP);
+
+  setupRTC();
 
   startble();
-  delay(5000);
+  delay(3000);
+
+  homescreen();
+
+  Serial.println("BOOTED");
 
 }
 
 void loop() {
+  if(!timeoutbol && rtc.getDateTime().second >= timeout && !slept){
+    sleep();
+    slept = true;
+    timeoutbol = true;
+    Serial.println("shallow sleep start");
+  }
+
+  if(digitalRead(TP_PIN_PIN) == HIGH && slept){
+    Serial.println("Wake up attempt");
+    wake();
+    slept = false;
+    homescreen();
+  }
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
-
 
 }

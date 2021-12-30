@@ -5,7 +5,7 @@
 #define password "20040317"
 
 //Replace with a human-friendly host name. Must not contain spaces or special characters and be unique on your network
-#define hostname "esp32_hub_proto1"
+#define hostname "esp32_hub_proto3"
 
 //Replace with your MQTT Broker address; example: #define mqttHost IPAddress(192, 168, 1, 195)
 #define mqttHost IPAddress(192, 168, 123, 16)
@@ -20,7 +20,7 @@
 #define mqttPassword "admin123"
 
 //Replace with the room name where the node will be placed; example: #define room "living-room"
-#define room "Wshop1"
+#define room "WareH1"
 
 //Specify the LED pin. For most dev boards, this is GPIO2
 #define LED_BUILTIN 2
