@@ -72,6 +72,16 @@ const char* ssid = "hub";
 const char* password = "20040317";
 
 
+void settimeout(int period){
+  //warning millis function overflow after 50 days back to 1
+  //parameter period is in unit of second
+  //Serial.println(millis());
+  timeout = millis() + period * 1000;
+  //Serial.print("timeout at:");
+  //Serial.println(timeout);
+  timeoutbol = false;
+}
+
 void setupRTC()
 {
   rtc.begin(Wire);
@@ -82,10 +92,6 @@ void setupRTC()
   mm = datetime.minute;
   ss = datetime.second;
   rtc.setDateTime(2021, 12, 30, 14, 45, 3);
-}
-
-void settimeout(int period){
-
 }
 
 void clockscreen(){
@@ -128,11 +134,8 @@ void homescreen(){
   //icons
   tft.drawXBitmap(2,122,syncalr,36,36,TFT_WHITE,TFT_BLACK);
   tft.drawXBitmap(42,122,personalr,36,36,TFT_WHITE,TFT_BLACK);
-  Serial.println(rtc.getDateTime().second);
-  timeout = rtc.getDateTime().second + 10;
-  Serial.print("timeout at:");
-  Serial.println(timeout);
-  timeoutbol = false;
+  settimeout(10);
+
 }
 
 void info(){
@@ -274,7 +277,7 @@ void setup() {
   setupRTC();
 
   startble();
-  delay(3000);
+  delay(3000); //stablize
 
   homescreen();
 
@@ -283,7 +286,7 @@ void setup() {
 }
 
 void loop() {
-  if(!timeoutbol && rtc.getDateTime().second >= timeout && !slept){
+  if(!timeoutbol && millis() >= timeout && !slept){
     sleep();
     slept = true;
     timeoutbol = true;
