@@ -5,7 +5,7 @@
 #define password "20040317"
 
 //Replace with a human-friendly host name. Must not contain spaces or special characters and be unique on your network
-#define hostname "esp32_hub_proto2"
+#define hostname "esp32_hub_proto1"
 
 //Replace with your MQTT Broker address; example: #define mqttHost IPAddress(192, 168, 1, 195)
 #define mqttHost IPAddress(192, 168, 123, 16)
@@ -20,7 +20,7 @@
 #define mqttPassword "admin123"
 
 //Replace with the room name where the node will be placed; example: #define room "living-room"
-#define room "HUB2"
+#define room "Wshop1"
 
 //Specify the LED pin. For most dev boards, this is GPIO2
 #define LED_BUILTIN 2
@@ -45,7 +45,7 @@
 #define bleScanWindow 0x10 // Used to determine antenna sharing between Bluetooth and WiFi. Do not modify unless you are confident you know what you're doing
 
 // Maximum distance (in meters) to report. Devices that are calculated to be further than this distance in meters will not be reported
-#define maxDistance 2
+#define maxDistance 3
 
 // MQTT topic for sensor values from HTU21D temperature and humidity sensor
 //#define htuSensorTopic "presence_nodes/" hostname "/sensor"
