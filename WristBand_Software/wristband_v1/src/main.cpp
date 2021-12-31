@@ -46,9 +46,12 @@ WiFiManager wifiManager;
 //Self
 String zone = "N/A";
 char zonerating = 's';
-uint32_t timeout = 0;
+unsigned long timeout = 0;
 bool timeoutbol = true;
 uint8_t hh, mm, ss ;
+int pageid = 1;
+bool pressed = false;
+
 
 bool slept= false;
 String chour,cminute;
@@ -80,7 +83,7 @@ void settimeout(int period){
   timeout = millis() + period * 1000;
   //Serial.print("timeout at:");
   //Serial.println(timeout);
-  timeoutbol = false;
+  timeoutbol = false; //set timeoutbool=true to cancel timeout
 }
 
 void setupRTC()
@@ -104,7 +107,7 @@ void clockscreen(){
   tft.setTextSize(4);
   tft.drawNumber(hh,20, tft.width()-22);
   tft.drawNumber(mm,20, tft.width()+22);
-
+  settimeout(10);
 }
 
 void wake(){
@@ -122,6 +125,7 @@ void sleep(){
   tft.writecommand(ST7735_SLPIN);
   delay(100); //for command to finish
   digitalWrite(LCD_BL,LOW);
+  pageid=1;
 }
 
 void homescreen(){
@@ -141,8 +145,19 @@ void homescreen(){
 
 }
 
-void info(){
-
+void infoscreen(){
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(1);
+  tft.drawString("Version",0, 10);
+  tft.drawString("1.0-d",0, 20);
+  tft.drawString("Battery",0, 30);
+  tft.drawString("NULL",0, 40);
+  tft.drawString("User ID",0, 50);
+  tft.drawString("01",0, 60);
+  tft.drawString("BLE ID",0, 70);
+  tft.drawString("d8a01d5b4636",0, 80);
+  settimeout(10);
 }
 
 void notification(String background,String info,String type){
@@ -310,5 +325,36 @@ void loop() {
     reconnect();
   }
   client.loop();
+
+  if(digitalRead(TP_PIN_PIN) == HIGH && !slept){
+    pageid++;
+    delay(400);
+    pressed = true; //indicate action required by the code
+    Serial.print("Change Page:");
+    Serial.println(pageid);
+  }
+
+  if(pressed){
+    //if statement to avoid repeated testing and triggering
+    switch(pageid){
+      case 1:
+        //when initial wake up it won't trigger this,this is for loop back only
+        timeoutbol = true;
+        homescreen();
+        pressed = false;
+        break;  //idk if necessary, maybe is
+      case 2:
+        timeoutbol = true;
+        clockscreen();
+        pressed = false;
+        break;
+      case 3:
+        timeoutbol = true;
+        pageid = 0; //page maxed out
+        infoscreen();
+        pressed = false;
+        break;
+    }
+  }
 
 }
