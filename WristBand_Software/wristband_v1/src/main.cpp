@@ -35,6 +35,7 @@
 #define TP_PWR_PIN          25
 #define LED_PIN             4
 #define CHARGE_PIN          32
+#define LCD_BL              27
 
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
@@ -108,6 +109,7 @@ void clockscreen(){
 
 void wake(){
   //wakes up the LCD only
+  digitalWrite(LCD_BL,HIGH);
   tft.writecommand(ST7735_SLPOUT);
   delay(100);
   tft.writecommand(ST7735_DISPON);
@@ -119,6 +121,7 @@ void sleep(){
   tft.writecommand(ST7735_DISPOFF);
   tft.writecommand(ST7735_SLPIN);
   delay(100); //for command to finish
+  digitalWrite(LCD_BL,LOW);
 }
 
 void homescreen(){
@@ -249,7 +252,10 @@ void reconnect() {
 
 void setup() {
   Serial.begin(115200);
+  pinMode(LCD_BL,OUTPUT);
+  digitalWrite(LCD_BL,HIGH);
   // TFT
+
   tft.init();
   tft.setRotation(0);
   tft.setSwapBytes(true);
@@ -273,6 +279,7 @@ void setup() {
   pinMode(TP_PIN_PIN, INPUT);
   //! Must be set to pull-up output mode in order to wake up in deep sleep mode
   pinMode(TP_PWR_PIN, PULLUP);
+
 
   setupRTC();
 
