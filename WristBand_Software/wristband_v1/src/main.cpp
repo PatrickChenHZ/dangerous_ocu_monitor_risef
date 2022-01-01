@@ -50,7 +50,17 @@ unsigned long timeout = 0;
 bool timeoutbol = true;
 uint8_t hh, mm, ss ;
 int pageid = 1;
-bool pressed = false;
+bool shortpressed = false;
+
+long buttonTimer = 0;
+long pressedtime = 0;
+long shortpressbound = 1000; //milisec
+long longPressTime = 2000; // milisec
+long verylongPressTime = 6000; //milisec
+
+boolean buttonActive = false;
+boolean longPressActive = false;
+boolean veryLongPressActive = false;
 
 
 bool slept= false;
@@ -195,6 +205,22 @@ void notification(String background,String info,String type){
   homescreen();
 }
 
+void emergency(string additionalmsg){
+    string ger = "emergency";
+    char gera[9];
+    ger.toCharArray(gera,8);
+    //require a char array
+    client.publish("clients/wb/wb1upstream", gera);
+    tft.fillScreen(TFT_RED);
+    tft.setTextColor(TFT_BLACK);
+    tft.setTextSize(2);
+    tft.drawString("SOS",0, 10);
+    tft.drawString("HELP",0, 27);
+    tft.drawString("REQUESTED",0, 44);
+    delay(10000); //will be changed to dismiss message or cancel request
+    homescreen();
+}
+
 void deepsleep(){
 
 }
@@ -321,21 +347,44 @@ void loop() {
     slept = false;
     homescreen();
   }
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
 
-  //problematic
+  //very problematic
+  /*
   if(digitalRead(TP_PIN_PIN) == HIGH && !slept){
     pageid++;
     delay(400);
-    pressed = true; //indicate action required by the code
+    shortpressed = true; //indicate action required by the code
     Serial.print("Change Page:");
     Serial.println(pageid);
   }
+  */
 
-  if(pressed){
+  //potential issue, if due to mqtt reconnect the loop did not cameback here on time, it would be an issue, need to consider multitasking
+  //issue: not very intutive because it is not act-on-the-go normally people would like to hold until something happens
+  if (digitalRead(TP_PIN_PIN) == HIGH) {
+		buttontimer = millis();
+    buttonActive = true;
+	} else {
+		if(buttonActive == true){
+      pressedtime = millis() - buttontimer;
+      //added larger than 50 ms as a filter may not be necessary
+      if(pressedtime <= shortpressbound && pressedtime >= 50){
+        //short press actions
+      }
+      else if(pressedtime <= longPressTime){
+        //longpress action
+      }
+      else if(pressedtime > longPressTime){
+        //very long press, currently not upbounded
+
+      }
+      //end this press
+      buttonActive = false;
+    }
+	}
+
+  //page selector
+  if(shortpressed && !slept){
     //if statement to avoid repeated testing and triggering
     switch(pageid){
       case 1:
@@ -357,5 +406,11 @@ void loop() {
         break;
     }
   }
+
+  //try to keep this at end of loop
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
 
 }
