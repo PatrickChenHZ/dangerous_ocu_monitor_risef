@@ -54,13 +54,14 @@ bool shortpressed = false;
 
 long buttonTimer = 0;
 long pressedtime = 0;
-long shortpressbound = 1000; //milisec
-long longPressTime = 2000; // milisec
-long verylongPressTime = 6000; //milisec
+long shortpressbound = 900; //milisec
+long longPressTimebound = 3000; // milisec
+long verylongPressTime = 5500; //milisec
 
 boolean buttonActive = false;
 boolean longPressActive = false;
-boolean veryLongPressActive = false;
+boolean verylongpressactive = false;
+boolean pressed = false;
 
 
 bool slept= false;
@@ -205,12 +206,37 @@ void notification(String background,String info,String type){
   homescreen();
 }
 
-void emergency(string additionalmsg){
-    string ger = "emergency";
-    char gera[9];
-    ger.toCharArray(gera,8);
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (client.connect("WB1",mqttuser,mqttpass)) {
+      Serial.println("connected");
+      // Subscribe
+      client.subscribe("clients/wb/wb1");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+
+void emergency(){
+    Serial.println("Emergency Triggered");
+    //making sure mqtt is working
+    if (!client.connected()) {
+      reconnect();
+    }
+    client.loop();
+    //String ger = "emergency";
+    //char gera[9];
+    //ger.toCharArray(gera,8);
     //require a char array
-    client.publish("clients/wb/wb1upstream", gera);
+    client.publish("clients/wb/wb1upstream", "emergency");
     tft.fillScreen(TFT_RED);
     tft.setTextColor(TFT_BLACK);
     tft.setTextSize(2);
@@ -268,25 +294,6 @@ void callback(char* topic, byte* message, unsigned int length) {
     }
     else if(messageTemp == "Lab1"){
       notification("red",zone,"zone");
-    }
-  }
-}
-
-void reconnect() {
-  // Loop until we're reconnected
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    // Attempt to connect
-    if (client.connect("WB1",mqttuser,mqttpass)) {
-      Serial.println("connected");
-      // Subscribe
-      client.subscribe("clients/wb/wb1");
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
     }
   }
 }
@@ -360,52 +367,80 @@ void loop() {
   */
 
   //potential issue, if due to mqtt reconnect the loop did not cameback here on time, it would be an issue, need to consider multitasking
-  //issue: not very intutive because it is not act-on-the-go normally people would like to hold until something happens
   if (digitalRead(TP_PIN_PIN) == HIGH) {
-		buttontimer = millis();
-    buttonActive = true;
-	} else {
-		if(buttonActive == true){
-      pressedtime = millis() - buttontimer;
-      //added larger than 50 ms as a filter may not be necessary
-      if(pressedtime <= shortpressbound && pressedtime >= 50){
-        //short press actions
-      }
-      else if(pressedtime <= longPressTime){
-        //longpress action
-      }
-      else if(pressedtime > longPressTime){
-        //very long press, currently not upbounded
+    //indicates button press just started
+		if(!buttonActive){
+      buttonTimer = millis();
+      buttonActive = true;
+    }
+    /*
+    //try to prioritize emergency to be processed first
+    if(millis()-buttonTimer >= verylongPressTimebound){
+      //trigger emergency
+      emergency();
+    }
+    */
+    //first trigger long press action, if button is still not released and went above time limit trigger emergency
+    if(millis()-buttonTimer >= shortpressbound){
 
+      //trigger long press action, also avoid repeated trigger
+      if(!longPressActive){
+        longPressActive = true;
+        Serial.println("general long press satisfied");
       }
-      //end this press
+      //if it continue to satisfy this
+      if(millis()-buttonTimer >= verylongPressTime){
+        //avoid repeated trigger
+        if(!verylongpressactive){
+          //trigger emergency
+          verylongpressactive = true;
+          emergency();
+        }
+      }
+    }
+	} else {
+    //reset everything when button is released
+		if(buttonActive){
+      //indicates end of button press
       buttonActive = false;
+      //finish up
+      if(!longPressActive){
+        //trigger short press
+        //page selector
+        pressed = true;
+        if(pressed && !slept){
+          //if statement to avoid repeated testing and triggering
+          pageid++;
+          switch(pageid){
+            case 1:
+              //when initial wake up it won't trigger this,this is for loop back only
+              timeoutbol = true;
+              homescreen();
+              pressed = false;
+              break;  //idk if necessary, maybe is
+            case 2:
+              timeoutbol = true;
+              clockscreen();
+              pressed = false;
+              break;
+            case 3:
+              timeoutbol = true;
+              pageid = 0; //page maxed out
+              infoscreen();
+              pressed = false;
+              break;
+          }
+        }
+      }
+      else{
+        //already acted for long press so recover
+        longPressActive = false;
+        if(verylongpressactive){
+          verylongpressactive = false;
+        }
+      }
     }
 	}
-
-  //page selector
-  if(shortpressed && !slept){
-    //if statement to avoid repeated testing and triggering
-    switch(pageid){
-      case 1:
-        //when initial wake up it won't trigger this,this is for loop back only
-        timeoutbol = true;
-        homescreen();
-        pressed = false;
-        break;  //idk if necessary, maybe is
-      case 2:
-        timeoutbol = true;
-        clockscreen();
-        pressed = false;
-        break;
-      case 3:
-        timeoutbol = true;
-        pageid = 0; //page maxed out
-        infoscreen();
-        pressed = false;
-        break;
-    }
-  }
 
   //try to keep this at end of loop
   if (!client.connected()) {
