@@ -124,16 +124,16 @@ void clockscreen(){
 void wake(){
   //wakes up the LCD only
   digitalWrite(LCD_BL,HIGH);
-  tft.writecommand(ST7735_SLPOUT);
+  tft.writecommand(ILI9341_SLPOUT);
   delay(100);
-  tft.writecommand(ST7735_DISPON);
+  tft.writecommand(ILI9341_DISPON);
   tft.init();
   delay(150); //wait for voltage to stablize
 }
 
 void sleep(){
-  tft.writecommand(ST7735_DISPOFF);
-  tft.writecommand(ST7735_SLPIN);
+  tft.writecommand(ILI9341_DISPOFF);
+  tft.writecommand(ILI9341_SLPIN);
   delay(100); //for command to finish
   digitalWrite(LCD_BL,LOW);
   pageid=1;
