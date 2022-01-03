@@ -50,6 +50,8 @@ unsigned long timeout = 0;
 bool timeoutbol = true;
 uint8_t hh, mm, ss ;
 int pageid = 1;
+int submenuid = 0; //0 indicate main menu, else match pageid
+int submenupageid = 1;
 bool shortpressed = false;
 
 long buttonTimer = 0;
@@ -62,7 +64,9 @@ boolean buttonActive = false;
 boolean longPressActive = false;
 boolean verylongpressactive = false;
 boolean pressed = false;
+boolean insubmenu = false;
 
+String page3buffer = "";
 
 bool slept= false;
 String chour,cminute;
@@ -136,7 +140,11 @@ void sleep(){
   tft.writecommand(ST7735_SLPIN);
   delay(100); //for command to finish
   digitalWrite(LCD_BL,LOW);
+  //reset all page and subpage
   pageid=1;
+  submenuid = 0; //0 indicate main menu, else match pageid
+  submenupageid = 1;
+
 }
 
 void homescreen(){
@@ -161,7 +169,7 @@ void infoscreen(){
   tft.setTextColor(TFT_WHITE);
   tft.setTextSize(1);
   tft.drawString("Version",0, 10);
-  tft.drawString("1.0-d",0, 20);
+  tft.drawString("1.0-f",0, 20);
   tft.drawString("Battery",0, 30);
   tft.drawString("NULL",0, 40);
   tft.drawString("User ID",0, 50);
@@ -225,26 +233,48 @@ void reconnect() {
   }
 }
 
-void emergency(){
+void emergency(String type){
+    String message;
+    String display;
     Serial.println("Emergency Triggered");
     //making sure mqtt is working
     if (!client.connected()) {
       reconnect();
     }
     client.loop();
-    //String ger = "emergency";
-    //char gera[9];
-    //ger.toCharArray(gera,8);
-    //require a char array
-    client.publish("clients/wb/wb1upstream", "emergency");
+    if(type == "sos"){
+      message = "shortcut";
+      display = "general";
+    }
+    else if(type == "med"){
+      message = "medical";
+      display = "medical";
+    }
+    else if(type == "lab"){
+      message = "lab rating";
+      display = "lab";
+    }
+    else if(type == "hzd"){
+      message = "hazard rating";
+      display = "hazard";
+    }
+    else{
+      message = "shortcut";
+      display = "general";
+    }
+    String msgpub = "emergency>" + zone + ">" + message;
+    char msgchar[msgpub.length()+1];
+    msgpub.toCharArray(msgchar,msgpub.length()+1);
+    client.publish("clients/wb/wb1upstream1", msgchar);
     tft.fillScreen(TFT_RED);
     tft.setTextColor(TFT_BLACK);
     tft.setTextSize(2);
     tft.drawString("SOS",0, 10);
     tft.drawString("HELP",0, 27);
     tft.drawString("REQUESTED",0, 44);
-    delay(10000); //will be changed to dismiss message or cancel request
-    homescreen();
+    tft.drawString(display,0, 61);
+    //need to be changed to dismiss message or cancel request, no delay allowed
+    settimeout(10);
 }
 
 void deepsleep(){
@@ -298,6 +328,113 @@ void callback(char* topic, byte* message, unsigned int length) {
   }
 }
 
+void requesthelpsub(int subid){
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(2);
+  tft.drawString("Request",0, 10);
+  tft.drawString("Help",0, 27);
+  tft.drawString("From",0, 44);
+  if(subid == 1){
+    tft.drawString("Medical",0, 78);
+    page3buffer = "med";
+  }
+  else if(subid == 2){
+    tft.drawString("Lab",0, 78);
+    page3buffer = "lab";
+  }
+  else if(subid == 3){
+    tft.drawString("Hazard",0, 78);
+    page3buffer = "hzd";
+  }
+  settimeout(15);
+}
+
+void requesthelp(){
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(2);
+  tft.drawString("Request",0, 10);
+  tft.drawString("Help",0, 27);
+  tft.drawString("Hold",0, 61);
+  tft.drawString("To",0, 78);
+  tft.drawString("Select",0, 95);
+  settimeout(12);
+}
+
+void longpresshandler(){
+  if(pageid == 3 && submenuid == 3){
+    //already in submenu and try to select a page
+    emergency(page3buffer);
+  }
+  else if(pageid == 3){
+    //just enter submenu
+    submenuid = 3;
+    requesthelpsub(1);
+  }
+}
+
+//probably can be trimmed
+void shortpresshandler(){
+  if(submenuid == 0){
+    pressed = true;
+    if(pressed && !slept){
+      //if statement to avoid repeated testing and triggering
+      pageid++;
+      switch(pageid){
+        case 1:
+          //when initial wake up it won't trigger this case,this is for loop back only
+          timeoutbol = true;
+          homescreen();
+          pressed = false;
+          break;  //idk if necessary, maybe is
+        case 2:
+          timeoutbol = true;
+          clockscreen();
+          pressed = false;
+          break;
+        case 3:
+          timeoutbol = true;
+          requesthelp();
+          pressed = false;
+          break;
+        case 4:
+          timeoutbol = true;
+          pageid = 0; //page maxed out
+          infoscreen();
+          pressed = false;
+          break;
+      }
+    }
+  }
+  else if(submenuid == 3){
+    pressed = true;
+    if(pressed && !slept){
+      //if statement to avoid repeated testing and triggering
+      submenupageid++;
+      switch(submenupageid){
+        case 1:
+          //when initial wake up it won't trigger this case,this is for loop back only
+          timeoutbol = true;
+          requesthelpsub(submenupageid);
+          pressed = false;
+          break;  //idk if necessary, maybe is
+        case 2:
+          timeoutbol = true;
+          requesthelpsub(submenupageid);
+          pressed = false;
+          break;
+        case 3:
+          timeoutbol = true;
+          requesthelpsub(submenupageid);
+          submenupageid = 0; //page maxed out
+          pressed = false;
+          break;
+      }
+    }
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   pinMode(LCD_BL,OUTPUT);
@@ -307,13 +444,6 @@ void setup() {
   tft.init();
   tft.setRotation(0);
   tft.setSwapBytes(true);
-
-  tft.fillScreen(TFT_BLACK);
-  tft.setTextColor(TFT_WHITE);
-  tft.drawString("Wristband v1.0",  0, tft.height() / 2 - 20);
-  tft.drawString("BLE OK",  0, tft.height() / 2  + 20);
-  tft.drawString("BOOTED",  0, tft.height() / 2  + 60);
-;
 
   //WIFI
   setup_wifi();
@@ -332,6 +462,11 @@ void setup() {
   setupRTC();
 
   startble();
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_WHITE);
+  tft.drawString("Wristband v1.0",  0, tft.height() / 2 - 20);
+  tft.drawString("BLE OK",  0, tft.height() / 2  + 20);
+  tft.drawString("BOOTED",  0, tft.height() / 2  + 60);
   delay(3000); //stablize
 
   homescreen();
@@ -355,17 +490,6 @@ void loop() {
     homescreen();
   }
 
-  //very problematic
-  /*
-  if(digitalRead(TP_PIN_PIN) == HIGH && !slept){
-    pageid++;
-    delay(400);
-    shortpressed = true; //indicate action required by the code
-    Serial.print("Change Page:");
-    Serial.println(pageid);
-  }
-  */
-
   //potential issue, if due to mqtt reconnect the loop did not cameback here on time, it would be an issue, need to consider multitasking
   if (digitalRead(TP_PIN_PIN) == HIGH) {
     //indicates button press just started
@@ -373,64 +497,39 @@ void loop() {
       buttonTimer = millis();
       buttonActive = true;
     }
-    /*
-    //try to prioritize emergency to be processed first
-    if(millis()-buttonTimer >= verylongPressTimebound){
-      //trigger emergency
-      emergency();
-    }
-    */
+
     //first trigger long press action, if button is still not released and went above time limit trigger emergency
     if(millis()-buttonTimer >= shortpressbound){
 
       //trigger long press action, also avoid repeated trigger
       if(!longPressActive){
+        Serial.println("long press triggered");
         longPressActive = true;
-        Serial.println("general long press satisfied");
+        longpresshandler();
       }
       //if it continue to satisfy this
       if(millis()-buttonTimer >= verylongPressTime){
         //avoid repeated trigger
         if(!verylongpressactive){
           //trigger emergency
+          //Serial.println("Very long press triggered");
           verylongpressactive = true;
-          emergency();
+          emergency("sos");
         }
       }
     }
 	} else {
+    //this section handles short press which is always switch page
     //reset everything when button is released
 		if(buttonActive){
       //indicates end of button press
       buttonActive = false;
+      //Serial.println("Released");
       //finish up
       if(!longPressActive){
         //trigger short press
         //page selector
-        pressed = true;
-        if(pressed && !slept){
-          //if statement to avoid repeated testing and triggering
-          pageid++;
-          switch(pageid){
-            case 1:
-              //when initial wake up it won't trigger this,this is for loop back only
-              timeoutbol = true;
-              homescreen();
-              pressed = false;
-              break;  //idk if necessary, maybe is
-            case 2:
-              timeoutbol = true;
-              clockscreen();
-              pressed = false;
-              break;
-            case 3:
-              timeoutbol = true;
-              pageid = 0; //page maxed out
-              infoscreen();
-              pressed = false;
-              break;
-          }
-        }
+        shortpresshandler();
       }
       else{
         //already acted for long press so recover
