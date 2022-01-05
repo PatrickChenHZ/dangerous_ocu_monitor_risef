@@ -36,8 +36,8 @@ sensor 2:
 binary_sensor 1:
 # One entry per sensor node to understand when the device is online/offline and see device metadata such as IP address and settings values
   - platform: mqtt
-    name: HUB1_stats
-    state_topic: "presence_nodes/HUB1"
+    name: HUB1_WorkShop1_stats
+    state_topic: "presence_nodes/Wshop1"
     json_attributes_topic: "presence_nodes/esp32_hub_proto1/tele"
     payload_on: "CONNECTED"
     payload_off: "DISCONNECTED"
@@ -46,9 +46,19 @@ binary_sensor 1:
 binary_sensor 2:
 # One entry per sensor node to understand when the device is online/offline and see device metadata such as IP address and settings values
   - platform: mqtt
-    name: HUB2_stats
-    state_topic: "presence_nodes/HUB2"
+    name: HUB2_Lab1_stats
+    state_topic: "presence_nodes/Lab1"
     json_attributes_topic: "presence_nodes/esp32_hub_proto2/tele"
+    payload_on: "CONNECTED"
+    payload_off: "DISCONNECTED"
+    device_class: connectivity
+    
+binary_sensor 3:
+# One entry per sensor node to understand when the device is online/offline and see device metadata such as IP address and settings values
+  - platform: mqtt
+    name: HUB3_Warehouse1_stats
+    state_topic: "presence_nodes/WareH1"
+    json_attributes_topic: "presence_nodes/esp32_hub_proto3/tele"
     payload_on: "CONNECTED"
     payload_off: "DISCONNECTED"
     device_class: connectivity

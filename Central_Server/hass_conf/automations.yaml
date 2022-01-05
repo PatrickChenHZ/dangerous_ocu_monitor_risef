@@ -1,0 +1,55 @@
+- id: '1640573762085'
+  alias: Notify Zone change to mqtt wb1
+  description: ''
+  trigger:
+  - platform: state
+    entity_id: sensor.band1
+  condition:
+  - condition: template
+    value_template: '{{ trigger.to_state.state != trigger.from_state.state }}'
+  action:
+  - service: mqtt.publish
+    data:
+      topic: clients/wb/wb1
+      payload_template: '{{ states(''sensor.band1'') }}'
+  mode: single
+- id: '1641241459930'
+  alias: Emergency WB1 Notification
+  description: ''
+  trigger:
+  - platform: mqtt
+    topic: clients/wb/wb1upstream1
+  condition: []
+  action:
+  - service: notify.persistent_notification
+    data:
+      title: Emergency
+      message: '{{ trigger.payload }}'
+  mode: single
+- id: '1641345782832'
+  alias: WB1 Profile Allocation
+  description: ''
+  trigger:
+  - platform: mqtt
+    topic: clients/wb/wb1profilereq
+    payload: d8a01d5b4636
+  condition: []
+  action:
+  - service: mqtt.publish
+    data:
+      topic: clients/wb/wb1config
+      payload_template: '{% set data = { "username": "Patr C.", "permitted_zone_rating":
+        "s,a,b,q", "zone_names": "Wshop1,Lab1,WareH1", "zone_rating": "a,b,s" } %}
+        {{ data.username }}>{{ now().year}},{{ now().month}},{{ now().day}},{{ now().hour}},{{
+        now().minute}},{{ now().second}}>{{ data.permitted_zone_rating }}>{{ data.zone_names}}>{{
+        data.zone_rating}}
+
+        '
+  mode: single
+  variables:
+    pub: '{% set data = { "username": "Patr C.", "permitted_zone_rating": "s,a,b,q",
+      "zone_names": "Wshop1,Lab1,WareH1", "zone_rating": "a,b,s" } %} {{ data.username
+      }}>{{ now().year}},{{ now().month}},{{ now().day}},{{ now().hour}},{{ now().minute}},{{
+      now().second}}>{{ data.permitted_zone_rating }}>{{ data.zone_names}}>{{ data.zone_rating}}
+
+      '
