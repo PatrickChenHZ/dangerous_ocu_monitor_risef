@@ -71,10 +71,12 @@ void mqttgetprofile(char* topic, byte* message, unsigned int length) {
             zoneri ++;
             continue;
           }
-          allowedzonerating[zoneri] = (char)message[i];
+
+          zoneidrating[zoneri] = (char)message[i];
         }
       }
     }
+    //start debug output
     Serial.println("Name: " + user);
     Serial.print("Time set to: ");
     Serial.println(rtc.formatDateTime(PCF_TIMEFORMAT_YYYY_MM_DD_H_M_S));
@@ -95,10 +97,11 @@ void mqttgetprofile(char* topic, byte* message, unsigned int length) {
     Serial.println("all zone zone ratings");
     for(int l = 0; l < 50; l++)
     {
-    Serial.print(allowedzonerating[l]);
+    Serial.print(zoneidrating[l]);
     Serial.print(',');
     }
     Serial.println("");
+    //end of debug output
     configured = true;
   }
 }

@@ -44,8 +44,11 @@ WiFiManager wifiManager;
 
 
 //Self
+
+//current
 String zone = "N/A";
-char zonerating = 's';
+char zonerating = 'n';
+//end current
 unsigned long timeout = 0;
 bool timeoutbol = true;
 uint8_t hh, mm, ss ;
@@ -65,6 +68,8 @@ boolean longPressActive = false;
 boolean verylongpressactive = false;
 boolean pressed = false;
 boolean insubmenu = false;
+boolean mqttflag = false;
+boolean notpermittedentry = false;
 
 String page3buffer = "";
 
@@ -82,7 +87,7 @@ String user = "";
 char permitted[50];
 //assumed 50 zones, there is no freaking vector in arduino
 String zoneid[50];
-char allowedzonerating[50];
+char zoneidrating[50];
 bool configured = false;
 
 //Device ID
@@ -210,13 +215,7 @@ void callback(char* topic, byte* message, unsigned int length) {
     Serial.print("Changing zone to ");
     Serial.println(messageTemp);
     zone = messageTemp;
-    //TODO utilize objective coding and use server to determine color
-    if(messageTemp == "Wshop1"){
-      notification("green",zone,"zone");
-    }
-    else if(messageTemp == "Lab1"){
-      notification("red",zone,"zone");
-    }
+    mqttflag = true;
   }
 }
 
@@ -293,7 +292,10 @@ void shortpresshandler(){
   }
 }
 
+//handle obtain remote profile allocate
 #include "rmtprofile.h"
+//function definiations for condition triggered action
+#include "handler.h"
 
 void setup() {
   Serial.begin(115200);
@@ -326,7 +328,7 @@ void setup() {
   tft.setTextColor(TFT_WHITE);
   tft.drawString("Wristband v1.1",  0, tft.height() / 2 - 20);
   tft.drawString("BLE OK",  0, tft.height() / 2  + 20);
-  tft.drawString("BOOTED",  0, tft.height() / 2  + 60);
+  tft.drawString("Ready",  0, tft.height() / 2  + 60);
   delay(3000); //stablize
 
 
@@ -340,7 +342,7 @@ void setup() {
 
   homescreen();
 
-  Serial.println("BOOTED");
+  Serial.println("BOOT Sequence Complete");
 
 }
 
@@ -415,5 +417,11 @@ void loop() {
     reconnect();
   }
   client.loop();
+
+  //check if callback function is triggered, income data need to be processed and admitted
+  if(mqttflag){
+    zonehandler();
+    mqttflag = false;
+  }
 
 }
