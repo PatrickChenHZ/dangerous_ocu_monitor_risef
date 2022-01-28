@@ -56,6 +56,7 @@ int pageid = 1;
 int submenuid = 0; //0 indicate main menu, else match pageid
 int submenupageid = 1;
 bool shortpressed = false;
+unsigned long lastnotify = 0;
 
 long buttonTimer = 0;
 long pressedtime = 0;
@@ -175,9 +176,12 @@ void deepsleep(){
 
 }
 
+void softreset(){
+  ESP.restart();
+}
+
 void setup_wifi() {
   delay(10);
-  // We start by connecting to a WiFi network
   Serial.println();
   Serial.print("Connecting to ");
   Serial.println(ssid);
@@ -185,6 +189,12 @@ void setup_wifi() {
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
+    //watch dog, if wifi won't connect within 1min soft reset
+    if(millis() >= 60000){
+      Serial.println("WIFI failed in 60 Sec, reboot in 10sec");
+      delay(10000);
+      softreset();
+    }
     delay(500);
     Serial.print(".");
   }
@@ -216,6 +226,12 @@ void callback(char* topic, byte* message, unsigned int length) {
     Serial.println(messageTemp);
     zone = messageTemp;
     mqttflag = true;
+  }
+
+  if(String(topic) == "client/wb/wb1"){
+    if(messageTemp == "softreset"){
+      softreset();
+    }
   }
 }
 
@@ -422,6 +438,9 @@ void loop() {
   if(mqttflag){
     zonehandler();
     mqttflag = false;
+  }
+  if(notpermittedentry){
+    notpermittedzone();
   }
 
 }

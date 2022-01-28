@@ -26,9 +26,15 @@ void zonehandler(){
     }
     //when it reach 49 it means it never satisfied before as loop is still running
     //when 49 is also not found as permitted, set flag
-    if(d == 49 && permitted[d] != zonerating){
-      //set not permitted entry flag
+    //avoid repeated trigger
+    if(d == 49 && permitted[d] != zonerating && !notpermittedentry){
       notpermittedentry = true;
+      lastnotify = millis() - 15000;
+      //publish message to server
+      String msgpub2 = "Not Permitted Zone Entry: " + zone + " > User: " + user;
+      char msgchar2[msgpub2.length()+1];
+      msgpub2.toCharArray(msgchar2,msgpub2.length()+1);
+      client.publish("clients/wb/wb1upstream1", msgchar2);
     }
   }
 }

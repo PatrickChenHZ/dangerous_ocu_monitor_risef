@@ -156,3 +156,27 @@ void requesthelp(){
   tft.drawString("Select",0, 95);
   settimeout(12);
 }
+
+
+
+void notpermittedzone(){
+  //warn every 20 sec even dismissed by user
+  //this page over write any user operation when triggered
+  //However shortcut triggered emergency still works
+  if(millis() > lastnotify + 20000){
+    //force wakeup
+    if(slept){
+      wake();
+    }
+    tft.fillScreen(TFT_RED);
+    tft.setTextColor(TFT_BLACK);
+    tft.setTextSize(2);
+    tft.drawString("Warning",0, 10);
+    tft.drawString("Not",0, 27);
+    tft.drawString("Permitted",0, 61);
+    tft.drawString("In this",0, 78);
+    tft.drawString("Zone",0, 95);
+    //auto timeout at 10sec
+    settimeout(10);
+  }
+}
