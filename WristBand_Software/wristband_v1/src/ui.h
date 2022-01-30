@@ -176,6 +176,7 @@ void notpermittedzone(){
     tft.drawString("Permitted",0, 61);
     tft.drawString("In this",0, 78);
     tft.drawString("Zone",0, 95);
+    lastnotify += 20000;
     //auto timeout at 10sec
     settimeout(10);
   }

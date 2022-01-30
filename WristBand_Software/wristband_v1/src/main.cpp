@@ -228,7 +228,7 @@ void callback(char* topic, byte* message, unsigned int length) {
     mqttflag = true;
   }
 
-  if(String(topic) == "client/wb/wb1"){
+  if(String(topic) == "clients/wb/wb1"){
     if(messageTemp == "softreset"){
       softreset();
     }
