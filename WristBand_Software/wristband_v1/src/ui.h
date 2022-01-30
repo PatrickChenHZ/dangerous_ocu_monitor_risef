@@ -4,11 +4,43 @@ void clockscreen(){
   RTC_Date datetime = rtc.getDateTime();
   hh = datetime.hour;
   mm = datetime.minute;
+  month = datetime.month;
+  date = datetime.day;
+  year = datetime.year;
+  weekday = rtc.getDayOfWeek(date,month,year);
   tft.fillScreen(TFT_BLACK);
   tft.setTextColor(TFT_WHITE);
   tft.setTextSize(4);
-  tft.drawNumber(hh,20, tft.width()-22);
-  tft.drawNumber(mm,20, tft.width()+22);
+  tft.drawNumber(hh,20, tft.width()-60);
+  tft.drawNumber(mm,20, tft.width()-25);
+  tft.setTextSize(2);
+  dateoutput = String(month) + "/" + String(date);
+  tft.drawString(dateoutput,15,tft.width()+20);
+  switch(weekday){
+    case 1:
+      weekdaystr = "Monday";
+      break;
+    case 2:
+      weekdaystr = "Tuesday";
+      break;
+    case 3:
+      weekdaystr = "Wednesday";
+      break;
+    case 4:
+      weekdaystr = "Thursday";
+      break;
+    case 5:
+      weekdaystr = "Friday";
+      break;
+    case 6:
+      weekdaystr = "Saturday";
+      break;
+    case 7:
+      weekdaystr = "Sunday";
+      break;
+  }
+  tft.setTextSize(1);
+  tft.drawString(weekdaystr,15,tft.width()+40);
   settimeout(10);
 }
 

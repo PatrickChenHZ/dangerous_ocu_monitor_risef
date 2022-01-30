@@ -52,6 +52,10 @@ char zonerating = 'n';
 unsigned long timeout = 0;
 bool timeoutbol = true;
 uint8_t hh, mm, ss ;
+uint8_t month,date,year;
+uint32_t weekday;
+String weekdaystr;
+String dateoutput;
 int pageid = 1;
 int submenuid = 0; //0 indicate main menu, else match pageid
 int submenupageid = 1;
