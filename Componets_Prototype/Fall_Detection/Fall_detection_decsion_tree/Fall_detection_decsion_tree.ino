@@ -1,5 +1,6 @@
 #include<Wire.h>
 const int MPU_addr=0x68;  // I2C address of the MPU-6050
+
 int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
 float ax=0, ay=0, az=0, gx=0, gy=0, gz=0;
 
@@ -17,28 +18,38 @@ int angleChange=0;
 
 
 void setup(){
+
   Wire.begin();
   Wire.beginTransmission(MPU_addr);
   Wire.write(0x6B);  // PWR_MGMT_1 register
   Wire.write(0);     // set to zero (wakes up the MPU-6050)
-  Wire.endTransmission(true);
-  Serial.begin(9600);
+  Wire.endTransmission(true);  
+  Serial.begin(115200);
+  delay(1000);
 }
 
 void loop(){
 
   mpu_read();
   //2050, 77, 1947 are values for calibration of accelerometer
-  ax = (AcX-2050)/16384.00;
-  ay = (AcY-77)/16384.00;
-  az = (AcZ-1947)/16384.00;
+  ax = (AcX)/16384.00;
+  ay = (AcY)/16384.00;
+  az = (AcZ)/16384.00;
+  /*
+  Serial.print("Ax: ");
+  Serial.print(AcX);
+  Serial.print(" Ay: ");
+  Serial.print(AcY);
+  Serial.print(" Az: ");
+  Serial.println(AcZ)
+  */
   
   //270, 351, 136 for gyroscope calibration
-  gx = (GyX+270)/131.07;
-  gy = (GyY-351)/131.07;
-  gz = (GyZ+136)/131.07;
+  gx = (GyX)/131.07;
+  gy = (GyY)/131.07;
+  gz = (GyZ)/131.07;
   
-  //calculating Amplitute vactor for 3 axis
+  //calculating Amplitute vector for 3 axis
   float Raw_AM = pow(pow(ax,2)+pow(ay,2)+pow(az,2),0.5);
   int AM = Raw_AM * 10;  // as values are within 0 to 1, it is multiplied by 10 for using if else conditions 
   
@@ -88,19 +99,20 @@ void loop(){
     }
   if (trigger1==true){
     trigger1count++;
-    if (AM>=12){ //if AM breaks upper threshold (3g)
+    if (AM>=15){ //if AM breaks upper threshold (3g)
       trigger2=true;
       Serial.println("Stage 2 ACTIVATED");
       trigger1=false; trigger1count=0;
       }
     }
-  if (AM<=2 && trigger2==false){ //if AM breaks lower threshold (0.4g)
+  if (AM<=5 && trigger2==false){ //if AM breaks lower threshold (0.4g)
     trigger1=true;
     Serial.println("Stage 1 ACTIVATED");
     }
 //It appears that delay is needed in order not to clog the port
   delay(100);
 }
+
 
 
 //taken from example code
