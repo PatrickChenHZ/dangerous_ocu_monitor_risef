@@ -314,6 +314,12 @@ void shortpresshandler(){
   }
 }
 
+void pubstr(String message,const char* topic){
+  char msgchar[message.length()+1];
+  message.toCharArray(msgchar,msgpub.length()+1);
+  client.publish(topic, msgchar);
+}
+
 //handle obtain remote profile allocate
 #include "rmtprofile.h"
 //function definiations for condition triggered action
@@ -451,7 +457,7 @@ void loop() {
   //check if fall flag is set
   if (fall==true){
     Serial.println("FALL DETECTED");
-    delay(20);
+    notification("red"," ","fall");
     fall=false;
     }
 

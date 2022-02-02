@@ -107,8 +107,16 @@ void notification(String background,String info,String type){
     tft.drawString(zone,0,69);
     //reserve another line for long zone name, minium distance for size 2 is 15
   }
-  delay(5000);
-  homescreen();
+  if(type == "fall"){
+    tft.setTextSize(2);
+    tft.drawString("Fall",0, 10);
+    tft.drawString("Detected",0, 27);
+    tft.drawString("Message",0, 44);
+    tft.drawString("Sent",0,69);
+  }
+  //delay(5000);
+  //homescreen();
+  settimeout(6);
 }
 
 void emergency(String type){
