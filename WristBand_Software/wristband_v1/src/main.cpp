@@ -94,6 +94,7 @@ char permitted[50];
 String zoneid[50];
 char zoneidrating[50];
 bool configured = false;
+bool fall = false;
 
 //Device ID
 const char* hwuuid = "d8a01d5b4636";
@@ -112,6 +113,7 @@ PubSubClient client(espClient);
 //wifi
 const char* ssid = "hub";
 const char* password = "20040317";
+
 
 void settimeout(int period){
   //warning millis function overflow after 50 days back to 1
@@ -317,18 +319,26 @@ void shortpresshandler(){
 //function definiations for condition triggered action
 #include "handler.h"
 
+#include "imu_sensor.h"
+
 void setup() {
   Serial.begin(115200);
   pinMode(LCD_BL,OUTPUT);
   digitalWrite(LCD_BL,HIGH);
-  // TFT
 
+  //wire
+  Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+  Wire.setClock(400000);
+
+  // TFT
   tft.init();
   tft.setRotation(0);
   tft.setSwapBytes(true);
 
   //WIFI
   setup_wifi();
+  //IMU
+  setupMPU9250();
   //MQTT
   client.setServer(mqtt_server, 1883);
   //client.setCallback(callback);
@@ -342,6 +352,7 @@ void setup() {
 
 
   setupRTC();
+
 
   startble();
   tft.fillScreen(TFT_BLACK);
@@ -366,7 +377,12 @@ void setup() {
 
 }
 
+#include "fall_detection.h"
+
 void loop() {
+  //warning 50ms delay included in this loop
+  fall_det();
+
   if(!timeoutbol && millis() >= timeout && !slept){
     sleep();
     slept = true;
@@ -431,6 +447,13 @@ void loop() {
       }
     }
 	}
+
+  //check if fall flag is set
+  if (fall==true){
+    Serial.println("FALL DETECTED");
+    delay(20);
+    fall=false;
+    }
 
   //try to keep this at end of loop
   if (!client.connected()) {
