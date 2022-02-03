@@ -41,6 +41,7 @@
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 PCF8563_Class rtc;
 WiFiManager wifiManager;
+TaskHandle_t Mqttthread;
 
 
 //Self
@@ -61,6 +62,7 @@ int submenuid = 0; //0 indicate main menu, else match pageid
 int submenupageid = 1;
 bool shortpressed = false;
 unsigned long lastnotify = 0;
+unsigned long lastmqtt = 0;
 
 long buttonTimer = 0;
 long pressedtime = 0;
@@ -316,8 +318,21 @@ void shortpresshandler(){
 
 void pubstr(String message,const char* topic){
   char msgchar[message.length()+1];
-  message.toCharArray(msgchar,msgpub.length()+1);
+  message.toCharArray(msgchar,message.length()+1);
   client.publish(topic, msgchar);
+}
+
+//HAHA    void * unused    is necessary
+void mqtt_loop(void * unused){
+  //try to keep this at end of loop
+  if (!client.connected()) {
+    reconnect();
+  }
+  //keep mqtt fetch time at around 1 sec to avoid overload
+  if(lastmqtt + 1000 <= millis()){
+    client.loop();
+    lastmqtt = millis();
+  }
 }
 
 //handle obtain remote profile allocate
@@ -381,6 +396,15 @@ void setup() {
 
   Serial.println("BOOT Sequence Complete");
 
+  //create multi thread task
+  xTaskCreatePinnedToCore(
+      mqtt_loop, /* Function to implement the task */
+      "MQTT_Loop", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      2,  /* Priority of the task */
+      &Mqttthread,  /* Task handle. */
+      1); /* Core where the task should run */
 }
 
 #include "fall_detection.h"
@@ -461,11 +485,6 @@ void loop() {
     fall=false;
     }
 
-  //try to keep this at end of loop
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
 
   //check if callback function is triggered, income data need to be processed and admitted
   if(mqttflag){
