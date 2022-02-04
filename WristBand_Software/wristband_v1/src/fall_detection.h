@@ -15,30 +15,47 @@ byte trigger2count=0; //stores the counts past since trigger 2 was set true
 byte trigger3count=0; //stores the counts past since trigger 3 was set true
 int angleChange=0;
 
-//taken from example code
 void mpu_read(){
+  /*
   AcX=IMU.ax;
   AcY=IMU.ay;
   AcZ=IMU.az;
   GyX=IMU.gx;
   GyY=IMU.gy;
   GyZ=IMU.gz;
+  */
+
+
+  AcX=acraw[0];
+  AcY=acraw[1];
+  AcZ=acraw[2];
+  GyX=gyraw[0];
+  GyY=gyraw[1];
+  GyZ=gyraw[2];
+
 }
 
 void fall_det(){
-
+  readMPU9250();
   mpu_read();
   //2050, 77, 1947 are values for calibration of accelerometer
   ax = (AcX)/16384.00;
   ay = (AcY)/16384.00;
   az = (AcZ)/16384.00;
+
+  /*
+  ax = (AcX);
+  ay = (AcY);
+  az = (AcZ);
+  */
+
   /*
   Serial.print("Ax: ");
   Serial.print(AcX);
   Serial.print(" Ay: ");
   Serial.print(AcY);
   Serial.print(" Az: ");
-  Serial.println(AcZ)
+  Serial.println(AcZ);
   */
 
   //270, 351, 136 for gyroscope calibration
@@ -50,7 +67,7 @@ void fall_det(){
   float Raw_AM = pow(pow(ax,2)+pow(ay,2)+pow(az,2),0.5);
   int AM = Raw_AM * 10;  // as values are within 0 to 1, it is multiplied by 10 for using if else conditions
 
-  Serial.println(AM);
+  //Serial.println(AM);
   //Serial.println(PM);
   //delay(500);
 
@@ -97,7 +114,7 @@ void fall_det(){
       trigger1=false; trigger1count=0;
       }
     }
-  if (AM<=5 && trigger2==false){ //if AM breaks lower threshold (0.4g)
+  if (AM<=4 && trigger2==false){ //if AM breaks lower threshold (0.4g)
     trigger1=true;
     Serial.println("Stage 1 ACTIVATED");
     }

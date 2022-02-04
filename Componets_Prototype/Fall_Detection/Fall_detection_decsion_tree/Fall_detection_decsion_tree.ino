@@ -35,14 +35,15 @@ void loop(){
   ax = (AcX)/16384.00;
   ay = (AcY)/16384.00;
   az = (AcZ)/16384.00;
-  /*
+  
   Serial.print("Ax: ");
   Serial.print(AcX);
   Serial.print(" Ay: ");
   Serial.print(AcY);
   Serial.print(" Az: ");
-  Serial.println(AcZ)
-  */
+  Serial.println(AcZ);
+ 
+  
   
   //270, 351, 136 for gyroscope calibration
   gx = (GyX)/131.07;

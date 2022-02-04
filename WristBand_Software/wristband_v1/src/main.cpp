@@ -10,6 +10,7 @@
 
 #include "icons.h"
 #include "ble_eddystone.h"
+#include "imu_sensor.h"
 
 //  git clone -b development https://github.com/tzapu/WiFiManager.git
 #include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
@@ -42,6 +43,7 @@ TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 PCF8563_Class rtc;
 WiFiManager wifiManager;
 TaskHandle_t Mqttthread;
+extern MPU9250 IMU;
 
 
 //Self
@@ -325,13 +327,15 @@ void pubstr(String message,const char* topic){
 //HAHA    void * unused    is necessary
 void mqtt_loop(void * unused){
   //try to keep this at end of loop
-  if (!client.connected()) {
-    reconnect();
-  }
-  //keep mqtt fetch time at around 1 sec to avoid overload
-  if(lastmqtt + 1000 <= millis()){
-    client.loop();
-    lastmqtt = millis();
+  for(;;){
+    if (!client.connected()) {
+      reconnect();
+    }
+    //keep mqtt fetch time at around 1 sec to avoid overload
+    if(lastmqtt + 1000 <= millis()){
+      client.loop();
+      lastmqtt = millis();
+    }
   }
 }
 
@@ -340,7 +344,7 @@ void mqtt_loop(void * unused){
 //function definiations for condition triggered action
 #include "handler.h"
 
-#include "imu_sensor.h"
+//#include "imu_sensor.h"
 
 void setup() {
   Serial.begin(115200);
@@ -364,8 +368,8 @@ void setup() {
   client.setServer(mqtt_server, 1883);
   //client.setCallback(callback);
   //rtc
-  Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
-  Wire.setClock(400000); //I2C frequency
+  //Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+  //Wire.setClock(400000); //I2C frequency
   //touch pad
   pinMode(TP_PIN_PIN, INPUT);
   //! Must be set to pull-up output mode in order to wake up in deep sleep mode
@@ -397,14 +401,17 @@ void setup() {
   Serial.println("BOOT Sequence Complete");
 
   //create multi thread task
+  /*
   xTaskCreatePinnedToCore(
-      mqtt_loop, /* Function to implement the task */
-      "MQTT_Loop", /* Name of the task */
-      10000,  /* Stack size in words */
-      NULL,  /* Task input parameter */
-      2,  /* Priority of the task */
-      &Mqttthread,  /* Task handle. */
-      1); /* Core where the task should run */
+      mqtt_loop, // Function to implement the task
+      "MQTT_Loop", // Name of the task
+      10000,  // Stack size in words
+      NULL,  // Task input parameter
+      2,  // Priority of the task
+      &Mqttthread,  //Task handle.
+      1); // Core where the task should run
+*/
+
 }
 
 #include "fall_detection.h"
@@ -493,6 +500,16 @@ void loop() {
   }
   if(notpermittedentry){
     notpermittedzone();
+  }
+
+  //mqtt main
+  if (!client.connected()) {
+    reconnect();
+  }
+  //keep mqtt fetch time at around 1 sec to avoid overload
+  if(lastmqtt + 1000 <= millis()){
+    client.loop();
+    lastmqtt = millis();
   }
 
 }

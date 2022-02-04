@@ -12,6 +12,9 @@
 
 MPU9250 IMU;
 
+int16_t acraw[3];
+int16_t gyraw[3];
+
 void setupMPU9250() {
   byte c = IMU.readByte(MPU9250_ADDRESS, WHO_AM_I_MPU9250);
   Serial.print("MPU9250 "); Serial.print("I AM "); Serial.print(c, HEX);
@@ -73,6 +76,7 @@ void readMPU9250() {
   if (IMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01)
   {
     IMU.readAccelData(IMU.accelCount);  // Read the x/y/z adc values
+    IMU.readAccelData(acraw);
     IMU.getAres();
 
     // Now we'll calculate the accleration value into actual g's
@@ -82,6 +86,7 @@ void readMPU9250() {
     IMU.az = (float)IMU.accelCount[2] * IMU.aRes; // - accelBias[2];
 
     IMU.readGyroData(IMU.gyroCount);  // Read the x/y/z adc values
+    IMU.readGyroData(gyraw);
     IMU.getGres();
 
     // Calculate the gyro value into actual degrees per second
@@ -124,9 +129,11 @@ void readMPU9250() {
   // modified to allow any convenient orientation convention. This is ok by
   // aircraft orientation standards! Pass gyro rate as rad/s
   //  MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f,  my,  mx, mz);
+  /*
   MahonyQuaternionUpdate(IMU.ax, IMU.ay, IMU.az, IMU.gx * DEG_TO_RAD,
                          IMU.gy * DEG_TO_RAD, IMU.gz * DEG_TO_RAD, IMU.my,
                          IMU.mx, IMU.mz, IMU.deltat);
+                         */
   // Serial print and/or display at 0.5 s rate independent of data rates
   IMU.delt_t = millis() - IMU.count;
 
