@@ -7,10 +7,11 @@
 #include <PubSubClient.h>
 #include "sensor.h"
 #include "esp_adc_cal.h"
+#include <MPU9250_asukiaaa.h>
 
 #include "icons.h"
 #include "ble_eddystone.h"
-#include "imu_sensor.h"
+
 
 //  git clone -b development https://github.com/tzapu/WiFiManager.git
 #include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
@@ -43,7 +44,7 @@ TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 PCF8563_Class rtc;
 WiFiManager wifiManager;
 TaskHandle_t Mqttthread;
-extern MPU9250 IMU;
+MPU9250_asukiaaa myIMU;
 
 
 //Self
@@ -65,6 +66,9 @@ int submenupageid = 1;
 bool shortpressed = false;
 unsigned long lastnotify = 0;
 unsigned long lastmqtt = 0;
+
+float fall_lowerthreshold = 0.5;
+float fall_upperthreshold = 5;
 
 long buttonTimer = 0;
 long pressedtime = 0;
@@ -363,7 +367,9 @@ void setup() {
   //WIFI
   setup_wifi();
   //IMU
-  setupMPU9250();
+  myIMU.setWire(&Wire);
+  myIMU.beginAccel();
+  myIMU.beginGyro();
   //MQTT
   client.setServer(mqtt_server, 1883);
   //client.setCallback(callback);
@@ -489,6 +495,7 @@ void loop() {
   if (fall==true){
     Serial.println("FALL DETECTED");
     notification("red"," ","fall");
+    pubstr("Fall Detected, User: " + user,"clients/wb/wb1upstream1");
     fall=false;
     }
 

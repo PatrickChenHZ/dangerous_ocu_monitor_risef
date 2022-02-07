@@ -17,25 +17,25 @@ void clockscreen(){
   dateoutput = String(month) + "/" + String(date);
   tft.drawString(dateoutput,15,tft.width()+20);
   switch(weekday){
-    case 1:
+    case 0:
       weekdaystr = "Monday";
       break;
-    case 2:
+    case 1:
       weekdaystr = "Tuesday";
       break;
-    case 3:
+    case 2:
       weekdaystr = "Wednesday";
       break;
-    case 4:
+    case 3:
       weekdaystr = "Thursday";
       break;
-    case 5:
+    case 4:
       weekdaystr = "Friday";
       break;
-    case 6:
+    case 5:
       weekdaystr = "Saturday";
       break;
-    case 7:
+    case 6:
       weekdaystr = "Sunday";
       break;
   }

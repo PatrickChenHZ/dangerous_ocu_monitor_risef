@@ -44,11 +44,17 @@ void loop(){
   Serial.println(AcZ);
  
   
-  
   //270, 351, 136 for gyroscope calibration
   gx = (GyX)/131.07;
   gy = (GyY)/131.07;
   gz = (GyZ)/131.07;
+
+  Serial.print("Gx: ");
+  Serial.print(GyX);
+  Serial.print(" Gy: ");
+  Serial.print(GyY);
+  Serial.print(" Gz: ");
+  Serial.println(GyZ);
   
   //calculating Amplitute vector for 3 axis
   float Raw_AM = pow(pow(ax,2)+pow(ay,2)+pow(az,2),0.5);
