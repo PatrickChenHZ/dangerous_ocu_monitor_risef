@@ -339,7 +339,12 @@ void mqtt_loop(void * unused){
     if(lastmqtt + 1000 <= millis()){
       client.loop();
       lastmqtt = millis();
+      //Serial.print("mqtt task at: ");
+      //Serial.println(xPortGetCoreID());
     }
+    //(the number is millisecond)
+    //purpose is to allow task schedular to do its job, delay() or yield() also works.
+    vTaskDelay(50 / portTICK_PERIOD_MS);
   }
 }
 
@@ -407,16 +412,16 @@ void setup() {
   Serial.println("BOOT Sequence Complete");
 
   //create multi thread task
-  /*
+  //set to lowest priority for now
+  //as observed, main loop normally run at core1
   xTaskCreatePinnedToCore(
       mqtt_loop, // Function to implement the task
       "MQTT_Loop", // Name of the task
       10000,  // Stack size in words
       NULL,  // Task input parameter
-      2,  // Priority of the task
+      0,  // Priority of the task
       &Mqttthread,  //Task handle.
-      1); // Core where the task should run
-*/
+      0); // Core where the task should run
 
 }
 
@@ -513,10 +518,16 @@ void loop() {
   if (!client.connected()) {
     reconnect();
   }
+
+  /*
   //keep mqtt fetch time at around 1 sec to avoid overload
   if(lastmqtt + 1000 <= millis()){
     client.loop();
     lastmqtt = millis();
   }
+  */
+
+  //Serial.print("Main loop at: ");
+  //Serial.println(xPortGetCoreID());
 
 }
