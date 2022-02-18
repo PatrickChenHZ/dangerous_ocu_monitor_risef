@@ -8,6 +8,8 @@
 #include "sensor.h"
 #include "esp_adc_cal.h"
 #include <MPU9250_asukiaaa.h>
+#include "MAX30105.h"
+#include "heartRate.h"
 
 #include "icons.h"
 #include "ble_eddystone.h"
@@ -38,6 +40,9 @@
 #define LED_PIN             4
 #define CHARGE_PIN          32
 #define LCD_BL              27
+#define HEATRATE_SDA        15
+#define HEATRATE_SCL        13
+#define HEATRATE_INT        4
 
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
@@ -45,6 +50,7 @@ PCF8563_Class rtc;
 WiFiManager wifiManager;
 TaskHandle_t Mqttthread;
 MPU9250_asukiaaa myIMU;
+MAX30105 particleSensor;
 
 
 //Self
@@ -363,6 +369,7 @@ void setup() {
   //wire
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
   Wire.setClock(400000);
+  Wire1.begin(HEATRATE_SDA, HEATRATE_SCL);
 
   // TFT
   tft.init();
@@ -375,6 +382,15 @@ void setup() {
   myIMU.setWire(&Wire);
   myIMU.beginAccel();
   myIMU.beginGyro();
+  //MAX30102/30105 Pulse sensor
+  if (!particleSensor.begin(Wire1, 400000)) { //Use default I2C port, 400kHz speed
+      tft.setTextColor(TFT_RED, TFT_BLACK); // Note: the new fonts do not draw the background colour
+      tft.println("MAX30105 was not found");
+      delay(1000);
+  }
+  particleSensor.setup(); //Configure sensor with default settings
+  particleSensor.setPulseAmplitudeRed(0x0A); //Turn Red LED to low to indicate sensor is running
+  particleSensor.setPulseAmplitudeGreen(0); //Turn off Green LED
   //MQTT
   client.setServer(mqtt_server, 1883);
   //client.setCallback(callback);
