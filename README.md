@@ -8,6 +8,6 @@ Project Trcaker:
 
 Wristband Software Version: V1.1
 
-Wristband Hardware Version: V0.0
+Wristband Hardware Version: V1.0 && V0.1_proto
 
 Hub Hardware Version: 
