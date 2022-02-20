@@ -91,4 +91,26 @@ void updatebiological()
   }
 }
 
+bool startpulse = false;
 
+void getbiological(){
+    //45 sec per reading
+    if(millis() > lastpulse + 45000 & !startpulse){
+        startpulse = true;
+        lastpulse = millis();
+    }
+    if(startpulse){
+        //per reading only last 10sec
+        if(lastpulse + 10000 > millis()){
+            particleSensor.wakeUp();
+            updatebiological();
+        }
+        else{
+            //pulse period expired
+            startpulse = false;
+            particleSensor.shutDown();
+            println("Pulse: " + pulse_bpm);
+            println("Blood Oxygen " + bloodoxy);
+        }
+    }
+}

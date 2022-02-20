@@ -74,6 +74,8 @@ int submenupageid = 1;
 bool shortpressed = false;
 unsigned long lastnotify = 0;
 unsigned long lastmqtt = 0;
+unsigned long lastpulse = 0;
+unsigned long pulsestarted = 0;
 
 float fall_lowerthreshold = 0.5;
 float fall_upperthreshold = 5;
@@ -453,6 +455,7 @@ void setup() {
 }
 
 #include "fall_detection.h"
+#include "biological.h"
 
 void loop() {
   //warning 50ms delay included in this loop
@@ -541,10 +544,8 @@ void loop() {
     notpermittedzone();
   }
 
-  //mqtt main
-  if (!client.connected()) {
-    reconnect();
-  }
+  getbiological();
+
 
   /*
   //keep mqtt fetch time at around 1 sec to avoid overload
