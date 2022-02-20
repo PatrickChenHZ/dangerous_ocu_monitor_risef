@@ -76,6 +76,7 @@ unsigned long lastnotify = 0;
 unsigned long lastmqtt = 0;
 unsigned long lastpulse = 0;
 unsigned long pulsestarted = 0;
+bool pulsesensorinit = false;
 
 float fall_lowerthreshold = 0.5;
 float fall_upperthreshold = 5;
@@ -391,11 +392,12 @@ void setup() {
   myIMU.beginGyro();
   //MAX30102/30105 Pulse sensor
   if (!particleSensor.begin(Wire1, 400000)) { //Use default I2C port, 400kHz speed
-      tft.setTextColor(TFT_RED, TFT_BLACK); // Note: the new fonts do not draw the background colour
-      tft.println("MAX30105 was not found");
+      //tft.setTextColor(TFT_RED, TFT_BLACK); // Note: the new fonts do not draw the background colour
+      //tft.println("MAX30105 was not found");
+      Serial.println("Pulse Sensor not found.");
       delay(1000);
   }
-   byte ledBrightness = 60; //Options: 0=Off to 255=50mA
+  byte ledBrightness = 60; //Options: 0=Off to 255=50mA
   byte sampleAverage = 4; //Options: 1, 2, 4, 8, 16, 32
   byte ledMode = 2; //Options: 1 = Red only, 2 = Red + IR, 3 = Red + IR + Green
   byte sampleRate = 100; //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
@@ -459,7 +461,7 @@ void setup() {
 
 void loop() {
   //warning 50ms delay included in this loop
-  fall_det();
+  //fall_det();
 
   if(!timeoutbol && millis() >= timeout && !slept){
     sleep();

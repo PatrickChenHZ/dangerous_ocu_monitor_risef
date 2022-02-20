@@ -3,11 +3,14 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-//#define MPU9250_ADDRESS_AD0_LOW  0x68
-//#define MPU9250_ADDRESS_AD0_HIGH 0x69
+//default
+#define MPU9250_ADDRESS_AD0_LOW  0x68
+//default was 0x69
+#define MPU9250_ADDRESS_AD0_HIGH 0x68
 
-#define MPU9250_ADDRESS_AD0_LOW  0x69
-#define MPU9250_ADDRESS_AD0_HIGH 0x69
+//for wristband
+//#define MPU9250_ADDRESS_AD0_LOW  0x69
+//#define MPU9250_ADDRESS_AD0_HIGH 0x69
 
 #define ACC_FULL_SCALE_2_G       0x00
 #define ACC_FULL_SCALE_4_G       0x08
