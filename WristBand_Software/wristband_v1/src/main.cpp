@@ -10,6 +10,7 @@
 #include <MPU9250_asukiaaa.h>
 #include "MAX30105.h"
 #include "heartRate.h"
+#include "spo2_algorithm.h"
 
 #include "icons.h"
 #include "ble_eddystone.h"
@@ -43,6 +44,7 @@
 #define HEATRATE_SDA        15
 #define HEATRATE_SCL        13
 #define HEATRATE_INT        4
+#define MAX_BRIGHTNESS 255
 
 
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
@@ -75,6 +77,9 @@ unsigned long lastmqtt = 0;
 
 float fall_lowerthreshold = 0.5;
 float fall_upperthreshold = 5;
+
+int32_t bloodoxy = 0;
+int32_t pulse_bpm = 0;
 
 long buttonTimer = 0;
 long pressedtime = 0;
@@ -388,9 +393,15 @@ void setup() {
       tft.println("MAX30105 was not found");
       delay(1000);
   }
-  particleSensor.setup(); //Configure sensor with default settings
-  particleSensor.setPulseAmplitudeRed(0x0A); //Turn Red LED to low to indicate sensor is running
-  particleSensor.setPulseAmplitudeGreen(0); //Turn off Green LED
+   byte ledBrightness = 60; //Options: 0=Off to 255=50mA
+  byte sampleAverage = 4; //Options: 1, 2, 4, 8, 16, 32
+  byte ledMode = 2; //Options: 1 = Red only, 2 = Red + IR, 3 = Red + IR + Green
+  byte sampleRate = 100; //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
+  int pulseWidth = 411; //Options: 69, 118, 215, 411
+  int adcRange = 4096; //Options: 2048, 4096, 8192, 16384
+
+  particleSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange); //Configure sensor with these settings
+
   //MQTT
   client.setServer(mqtt_server, 1883);
   //client.setCallback(callback);
