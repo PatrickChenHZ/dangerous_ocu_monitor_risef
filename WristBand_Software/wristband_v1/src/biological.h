@@ -87,31 +87,32 @@ void updatebiological()
       Serial.print(F(", SPO2Valid="));
       Serial.println(validSPO2, DEC);
 
-
-     //pass all data to global vriable as result
+    //data pre-process
     if(validSPO2 == 1){
       //bloodoxy = spo2;
       if(totalsamplespo2 != 0){
         if(spo2 != arrspo2[totalsampleheartrate-1]){
           arrspo2[totalsampleheartrate] = spo2;
+          totalsamplespo2++;
         }
       }
       else{
         arrspo2[totalsampleheartrate] = spo2;
+        totalsamplespo2++;
       }
-      totalsamplespo2++;
     }
     if(validHeartRate == 1){
       //pulse_bpm = heartRate;
       if(totalsampleheartrate != 0){
         if(heartRate != arrheartrate[totalsampleheartrate-1]){
           arrheartrate[totalsampleheartrate] = heartRate;
+          totalsampleheartrate++;
         }
       }
       else{
         arrheartrate[totalsampleheartrate] = heartRate;
+        totalsampleheartrate++;
       }
-      totalsampleheartrate++;
     }
   }
 
