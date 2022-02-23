@@ -14,6 +14,14 @@ int8_t validHeartRate; //indicator to show if the heart rate calculation is vali
 bool startpulse = false;
 char buf[100];
 
+int32_t arrspo2[20];
+int32_t arrheartrate[20];
+int totalsamplespo2 = 0;
+int totalsampleheartrate = 0;
+
+int32_t finalspo2;
+int32_t finalheartrate;
+
 void biosensorinit(){
   bufferLength = 100; //buffer length of 100 stores 4 seconds of samples running at 25sps
 
@@ -61,7 +69,7 @@ void updatebiological()
     irBuffer[i] = particleSensor.getIR();
     particleSensor.nextSample(); //finished with this sample so move to next sample
 
-      /*
+
       Serial.print(F("red="));
       Serial.print(redBuffer[i], DEC);
       Serial.print(F(", ir="));
@@ -78,19 +86,46 @@ void updatebiological()
 
       Serial.print(F(", SPO2Valid="));
       Serial.println(validSPO2, DEC);
-      */
+
 
      //pass all data to global vriable as result
-    if(validSPO2){
-      bloodoxy = spo2;
+    if(validSPO2 == 1){
+      //bloodoxy = spo2;
+      if(totalsamplespo2 != 0){
+        if(spo2 != arrspo2[totalsampleheartrate-1]){
+          arrspo2[totalsampleheartrate] = spo2;
+        }
+      }
+      else{
+        arrspo2[totalsampleheartrate] = spo2;
+      }
+      totalsamplespo2++;
     }
-    if(validHeartRate){
-      pulse_bpm = heartRate;
+    if(validHeartRate == 1){
+      //pulse_bpm = heartRate;
+      if(totalsampleheartrate != 0){
+        if(heartRate != arrheartrate[totalsampleheartrate-1]){
+          arrheartrate[totalsampleheartrate] = heartRate;
+        }
+      }
+      else{
+        arrheartrate[totalsampleheartrate] = heartRate;
+      }
+      totalsampleheartrate++;
     }
   }
 
     //After gathering 25 new samples recalculate HR and SP02
   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
+}
+
+void biofilter(){
+  int32_t heartavg;
+  int32_t spo2avg;
+
+  //reset vars
+  totalsampleheartrate = 0;
+  totalsamplespo2 = 0;
 }
 
 void getbiological(){
@@ -116,6 +151,7 @@ void getbiological(){
             //pulse period expired
             particleSensor.shutDown();
             Serial.println("Finished.");
+            biofilter();
             Serial.print("Pulse: ");
             sprintf(buf, "%lu\n", pulse_bpm); Serial.println(buf);
             Serial.print("Blood Oxygen: ");
