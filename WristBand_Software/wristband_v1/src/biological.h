@@ -90,20 +90,20 @@ void updatebiological()
     //data pre-process
     if(validSPO2 == 1){
       //bloodoxy = spo2;
-      if(totalsamplespo2 != 0){
-        if(spo2 != arrspo2[totalsampleheartrate-1]){
-          arrspo2[totalsampleheartrate] = spo2;
+      if(totalsamplespo2 > 1){
+        if(spo2 != arrspo2[totalsamplespo2-1]){
+          arrspo2[totalsamplespo2] = spo2; //store measurement into array
           totalsamplespo2++;
         }
       }
       else{
-        arrspo2[totalsampleheartrate] = spo2;
+        arrspo2[totalsamplespo2] = spo2;
         totalsamplespo2++;
       }
     }
     if(validHeartRate == 1){
       //pulse_bpm = heartRate;
-      if(totalsampleheartrate != 0){
+      if(totalsampleheartrate > 0){
         if(heartRate != arrheartrate[totalsampleheartrate-1]){
           arrheartrate[totalsampleheartrate] = heartRate;
           totalsampleheartrate++;
@@ -115,16 +115,59 @@ void updatebiological()
       }
     }
   }
-
-    //After gathering 25 new samples recalculate HR and SP02
+  //After gathering 25 new samples recalculate HR and SP02
   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
 }
 
 void biofilter(){
+
   int32_t heartavg;
   int32_t spo2avg;
 
-  //reset vars
+  //filter out invalid measurements
+  int referenceMeasurement = arrspo2[ 2*(totalsamplespo2/5) ];
+  int medium[totalsamplespo2];
+  int mediumIndex=0;
+
+  for(int i=0; i<totalsamplespo2; i++){
+    if(abs(referenceMeasurement - arrspo2[i]) > 13){
+      arrspo2[i] = NULL;
+    }else{
+      referenceMeasurement = arrspo2[i];
+      medium[mediumIndex] = arrspo2[i];
+      mediumIndex++;
+    }
+  }
+  for(int i=0; i<totalsamplespo2; i++){
+    if(i<=mediumIndex){
+      arrspo2[i] = medium[i];
+    }else{
+      arrspo2[i] = NULL;
+    }
+  }
+
+  referenceMeasurement = arrheartrate[ 2*(totalsampleheartrate/5) ];
+  int medium2[totalsampleheartrate];
+  int mediumIndex2=0;
+
+  for(int i=0; i<totalsampleheartrate; i++){
+    if(abs(referenceMeasurement - arrheartrate[i]) > 20){
+      arrheartrate[i] = NULL;
+    }else{
+      referenceMeasurement = arrheartrate[i];
+      medium2[mediumIndex2] = arrheartrate[i];
+      mediumIndex2++;
+    }
+  }
+  for(int i=0; i<totalsampleheartrate; i++){
+    if(i<=mediumIndex2){
+      arrheartrate[i] = medium2[i];
+    }else{
+      arrheartrate[i] = NULL;
+    }
+  }
+
+
   totalsampleheartrate = 0;
   totalsamplespo2 = 0;
 }
