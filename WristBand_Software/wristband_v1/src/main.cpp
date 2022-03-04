@@ -81,8 +81,12 @@ bool pulsesensorinit = false;
 float fall_lowerthreshold = 0.5;
 float fall_upperthreshold = 5;
 
-int32_t bloodoxy = 0;
-int32_t pulse_bpm = 0;
+//bio v1 need 32 int as result holder
+//int32_t bloodoxy = 0;
+//int32_t pulse_bpm = 0;
+
+double bloodoxy = 0;
+double pulse_bpm = 0;
 
 long buttonTimer = 0;
 long pressedtime = 0;
@@ -397,6 +401,8 @@ void setup() {
       Serial.println("Pulse Sensor not found.");
       delay(1000);
   }
+  //For bio sensor code v1
+  /*
   byte ledBrightness = 60; //Options: 0=Off to 255=50mA
   byte sampleAverage = 4; //Options: 1, 2, 4, 8, 16, 32
   byte ledMode = 2; //Options: 1 = Red only, 2 = Red + IR, 3 = Red + IR + Green
@@ -405,6 +411,18 @@ void setup() {
   int adcRange = 4096; //Options: 2048, 4096, 8192, 16384
 
   particleSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange); //Configure sensor with these settings
+  */
+
+  //for bio sensor code v2
+  byte ledBrightness =70; //Options: 0=Off to 255=50mA
+  byte sampleAverage = 2; //Options: 1, 2, 4, 8, 16, 32
+  byte ledMode = 2; //Options: 1 = Red only, 2 = Red + IR, 3 = Red + IR + Green
+  //Options: 1 = IR only, 2 = Red + IR on MH-ET LIVE MAX30102 board
+  int sampleRate = 400; //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
+  int pulseWidth = 411; //Options: 69, 118, 215, 411
+  int adcRange = 4096; //Options: 2048, 4096, 8192, 16384
+  // Set up the wanted parameters
+  particleSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate,pulseWidth, adcRange); //Configure sensor with these settings
 
   //MQTT
   client.setServer(mqtt_server, 1883);

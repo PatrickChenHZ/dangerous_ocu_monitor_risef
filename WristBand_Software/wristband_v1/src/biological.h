@@ -2,7 +2,10 @@
 #include "heartRate.h"
 #include "spo2_algorithm.h"
 
+bool startpulse = false;
 
+//for bio sensor v1 code
+/*
 uint32_t irBuffer[100]; //infrared LED sensor data
 uint32_t redBuffer[100];  //red LED sensor data
 int32_t bufferLength; //data length
@@ -11,7 +14,6 @@ int8_t validSPO2; //indicator to show if the SPO2 calculation is valid
 int32_t heartRate; //heart rate value
 int8_t validHeartRate; //indicator to show if the heart rate calculation is valid
 
-bool startpulse = false;
 char buf[100];
 
 int32_t arrspo2[20];
@@ -21,7 +23,44 @@ int totalsampleheartrate = 0;
 
 int32_t finalspo2;
 int32_t finalheartrate;
+*/
 
+// BIO v2 alg vars
+static double fbpmrate = 0.95; // low pass filter coefficient for HRM in bpm
+static uint32_t crosstime = 0; //falling edge , zero crossing time in msec
+static uint32_t crosstime_prev = 0;//previous falling edge , zero crossing time in msec
+static double bpm = 40.0;
+static double ebpm = 40.0;
+static double eir = 0.0; //estimated lowpass filtered IR signal to find falling edge without notch
+static double firrate = 0.85; //IR filter coefficient to remove notch ,should be smaller than frate
+static double eir_prev = 0.0;
+
+
+
+#define TIMETOBOOT 3000 // wait for this time(msec) to output SpO2
+#define SCALE 88.0 //adjust to display heart beat and SpO2 in the same scale
+#define SAMPLING 5 //if you want to see heart beat more precisely , set SAMPLING to 1
+#define FINGER_ON 30000 // if red signal is lower than this , it indicates your finger is not on the sensor
+#define MINIMUM_SPO2 80.0
+
+#define FINGER_ON 50000 // if ir signal is lower than this , it indicates your finger is not on the sensor
+#define LED_PERIOD 100 // light up LED for this period in msec when zero crossing is found for filtered IR signal
+#define MAX_BPS 180
+#define MIN_BPS 45
+
+double avered = 0; double aveir = 0;
+double sumirrms = 0;
+double sumredrms = 0;
+int i = 0;
+int Num = 100;//calculate SpO2 by this sampling interval
+
+double ESpO2 = 95.0;//initial value of estimated SpO2
+double FSpO2 = 0.7; //filter factor for estimated SpO2
+double frate = 0.95; // .95 default low pass filter for IR/red LED value to eliminate AC component
+
+//End of BIO v2 alg vars
+
+/*
 void biosensorinit(){
   bufferLength = 100; //buffer length of 100 stores 4 seconds of samples running at 25sps
 
@@ -35,12 +74,12 @@ void biosensorinit(){
     irBuffer[i] = particleSensor.getIR();
     particleSensor.nextSample();
 
-    /*
-    Serial.print(F("red="));
-    Serial.print(redBuffer[i], DEC);
-    Serial.print(F(", ir="));
-    Serial.println(irBuffer[i], DEC);
-    */
+
+    //Serial.print(F("red="));
+    //Serial.print(redBuffer[i], DEC);
+    //Serial.print(F(", ir="));
+    //Serial.println(irBuffer[i], DEC);
+
   }
 
   //calculate heart rate and SpO2 after first 100 samples (first 4 seconds of samples)
@@ -118,11 +157,88 @@ void updatebiological()
   //After gathering 25 new samples recalculate HR and SP02
   maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
 }
+*/
 
+double HRM_estimator( double fir , double aveir){
+  int CTdiff;
+
+  // Heart Rate Monitor by finding falling edge
+  eir = eir * firrate + fir * (1.0 - firrate); //estimated IR : low pass filtered IR signal
+
+  if (((eir - aveir) * (eir_prev - aveir) < 0) && ((eir - aveir) < 0.0)){
+    //find zero cross at falling edge
+    crosstime = millis();//system time in msec of falling edge
+    //Serial.print(crosstime); Serial.print(",CRT,");
+    //Serial.println(crosstime_prev);
+    //Serial.print("Cross Time :");
+    CTdiff = crosstime-crosstime_prev;
+    //Serial.println(CTdiff);
+    //if ( ((crosstime - crosstime_prev ) > (60 * 1000 / MAX_BPS)) && ((crosstime - crosstime_prev ) < (60 * 1000 / MIN_BPS)) ) {
+    if ((CTdiff > 333) && (CTdiff < 1333)){
+      bpm = 60.0 * 1000.0 / (double)(crosstime - crosstime_prev) ; //get bpm
+      // Serial.println("crossed");
+      ebpm = ebpm * fbpmrate + (1.0 - fbpmrate) * bpm;//estimated bpm by low pass filtered
+    }
+    else{
+      //Serial.println("faild to find falling edge");
+    }
+    crosstime_prev = crosstime;
+  }
+   eir_prev = eir;
+   return (ebpm);
+}
+
+void updatebio_v2(){
+  uint32_t ir, red , green;
+  double fred, fir;
+  double SpO2 = 0; //raw SpO2 before low pass filtered
+  int idx=0;
+
+  particleSensor.check(); //Check the sensor, read up to 3 samples
+
+  int Ebpm = 60;
+
+  while (1) {
+    red = particleSensor.getRed();  //Sparkfun's MAX30105
+    ir = particleSensor.getIR();  //Sparkfun's MAX30105
+    i++;
+    fred = (double)red;
+    fir = (double)ir;
+    avered = avered * frate + (double)red * (1.0 - frate);//average red level by low pass filter
+    aveir = aveir * frate + (double)ir * (1.0 - frate); //average IR level by low pass filter
+    sumredrms += (fred - avered) * (fred - avered); //square sum of alternate component of red level
+    sumirrms += (fir - aveir) * (fir - aveir);//square sum of alternate component of IR level
+    Ebpm = (int) HRM_estimator(fir, aveir); //Ebpm is estimated BPM
+    if (ir < FINGER_ON){
+        ESpO2 = MINIMUM_SPO2; //indicator for finger detached
+    }
+    if ((i % Num) == 0) {
+      double R = (sqrt(sumredrms) / avered) / (sqrt(sumirrms) / aveir);
+      SpO2 = -23.3 * (R - 0.4) + 100;
+      ESpO2 = FSpO2 * ESpO2 + (1.0 - FSpO2) * SpO2;
+      Serial.print("SPO2: ");
+      Serial.print(SpO2);Serial.print(",");Serial.print(ESpO2);
+      Serial.print(" BPM : "); Serial.print(Ebpm);Serial.print(", R:");
+      Serial.println(R);
+      sumredrms = 0.0; sumirrms = 0.0; i = 0;
+
+      Serial.print("Heart Rate: ");
+      Serial.println(Ebpm);
+      bloodoxy = SpO2;
+      pulse_bpm = Ebpm;
+      //sendSPOData(ESpO2);
+      break;
+    }
+    particleSensor.nextSample(); //We're finished with this sample so move to next sample
+   // Serial.println(SpO2);
+ }
+}
+
+/*
 void biofilter(){
 
-  int32_t heartavg;
-  int32_t spo2avg;
+  //int32_t heartavg;
+  //int32_t spo2avg;
 
   //filter out invalid measurements
   int referenceMeasurement = arrspo2[ 2*(totalsamplespo2/5) ];
@@ -131,7 +247,7 @@ void biofilter(){
 
   for(int i=0; i<totalsamplespo2; i++){
     if(abs(referenceMeasurement - arrspo2[i]) > 13){
-      arrspo2[i] = NULL;
+      arrspo2[i] = -999;
     }else{
       referenceMeasurement = arrspo2[i];
       medium[mediumIndex] = arrspo2[i];
@@ -142,7 +258,7 @@ void biofilter(){
     if(i<=mediumIndex){
       arrspo2[i] = medium[i];
     }else{
-      arrspo2[i] = NULL;
+      arrspo2[i] = 0;
     }
   }
 
@@ -152,7 +268,7 @@ void biofilter(){
 
   for(int i=0; i<totalsampleheartrate; i++){
     if(abs(referenceMeasurement - arrheartrate[i]) > 20){
-      arrheartrate[i] = NULL;
+      arrheartrate[i] = -999;
     }else{
       referenceMeasurement = arrheartrate[i];
       medium2[mediumIndex2] = arrheartrate[i];
@@ -163,7 +279,7 @@ void biofilter(){
     if(i<=mediumIndex2){
       arrheartrate[i] = medium2[i];
     }else{
-      arrheartrate[i] = NULL;
+      arrheartrate[i] = 0;
     }
   }
 
@@ -171,13 +287,17 @@ void biofilter(){
   totalsampleheartrate = 0;
   totalsamplespo2 = 0;
 }
+*/
 
 void getbiological(){
     //45 sec per reading
+    //init is code v1 only
+    /*
     if(!pulsesensorinit){
       biosensorinit();
       pulsesensorinit = true;
     }
+    */
     if((millis() > lastpulse + 45000) & !startpulse){
         startpulse = true;
         lastpulse = millis();
@@ -189,17 +309,20 @@ void getbiological(){
         if(lastpulse + 10000 > millis()){
             //particleSensor.wakeUp();
             Serial.println("collecting pulse");
-            updatebiological();
+            //updatebiological();
+            updatebio_v2();
         }
         else{
             //pulse period expired
             particleSensor.shutDown();
             Serial.println("Finished.");
-            biofilter();
+            //biofilter();
             Serial.print("Pulse: ");
-            sprintf(buf, "%lu\n", pulse_bpm); Serial.println(buf);
+            Serial.print(pulse_bpm);
+            //sprintf(buf, "%lu\n", pulse_bpm); Serial.println(buf);
             Serial.print("Blood Oxygen: ");
-            sprintf(buf, "%lu\n", bloodoxy); Serial.println(buf);
+            Serial.println(bloodoxy);
+            //sprintf(buf, "%lu\n", bloodoxy); Serial.println(buf);
             startpulse = false;
         }
     }
