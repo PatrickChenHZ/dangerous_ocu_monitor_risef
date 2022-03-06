@@ -247,7 +247,7 @@ void biofilter(){
 
   for(int i=0; i<totalsamplespo2; i++){
     if(abs(referenceMeasurement - arrspo2[i]) > 13){
-      arrspo2[i] = -999;
+      arrspo2[i] = -998;
     }else{
       referenceMeasurement = arrspo2[i];
       medium[mediumIndex] = arrspo2[i];
@@ -268,7 +268,7 @@ void biofilter(){
 
   for(int i=0; i<totalsampleheartrate; i++){
     if(abs(referenceMeasurement - arrheartrate[i]) > 20){
-      arrheartrate[i] = -999;
+      arrheartrate[i] = -998;
     }else{
       referenceMeasurement = arrheartrate[i];
       medium2[mediumIndex2] = arrheartrate[i];
@@ -288,6 +288,7 @@ void biofilter(){
   totalsamplespo2 = 0;
 }
 */
+
 
 void getbiological(){
     //45 sec per reading

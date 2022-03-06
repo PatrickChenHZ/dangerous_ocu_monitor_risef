@@ -55,8 +55,8 @@ void homescreen(){
   tft.drawRect(0,120,40,40,TFT_WHITE);
   tft.drawRect(40,120,40,40,TFT_WHITE);
   //icons
-  tft.drawXBitmap(2,122,syncalr,36,36,TFT_WHITE,TFT_BLACK);
-  tft.drawXBitmap(42,122,personalr,36,36,TFT_WHITE,TFT_BLACK);
+  tft.drawXBitmap(2,122,iconleft,36,36,TFT_WHITE,TFT_BLACK);
+  tft.drawXBitmap(42,122,iconright,36,36,TFT_WHITE,TFT_BLACK);
   settimeout(10);
 
 }

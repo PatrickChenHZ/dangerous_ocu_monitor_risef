@@ -60,6 +60,8 @@ MAX30105 particleSensor;
 //current
 String zone = "N/A";
 char zonerating = 'n';
+static unsigned char *iconleft = warehouse;
+static unsigned char *iconright = prank3;
 //end current
 unsigned long timeout = 0;
 bool timeoutbol = true;

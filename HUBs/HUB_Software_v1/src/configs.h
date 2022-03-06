@@ -5,7 +5,7 @@
 #define password "20040317"
 
 //Replace with a human-friendly host name. Must not contain spaces or special characters and be unique on your network
-#define hostname "esp32_hub_proto3"
+#define hostname "esp32_hub_proto4"
 
 //Replace with your MQTT Broker address; example: #define mqttHost IPAddress(192, 168, 1, 195)
 #define mqttHost IPAddress(192, 168, 123, 16)
@@ -46,9 +46,6 @@
 
 // Maximum distance (in meters) to report. Devices that are calculated to be further than this distance in meters will not be reported
 #define maxDistance 3
-
-// MQTT topic for sensor values from HTU21D temperature and humidity sensor
-//#define htuSensorTopic "presence_nodes/" hostname "/sensor"
 
 
 //List of allowed MAC Addresses for MQTT Publish. All others will be ignored.
