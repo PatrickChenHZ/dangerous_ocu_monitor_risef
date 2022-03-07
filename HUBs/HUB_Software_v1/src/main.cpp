@@ -19,6 +19,8 @@ extern "C" {
 #include "BLEEddystoneTLM.h"
 #include "BLEEddystoneURL.h"
 #include "configs.h"
+#include "sensors/gp2y1051.h"
+#include "sensors/R200.h"
 
 
 static const int scanTime = singleScanTime;
@@ -47,7 +49,7 @@ float microparticle;
 
 #include "distance_alg.h"
 
-
+/*
 void reportSensorValues() {
 	char temp[8];
 	char humidity[8];
@@ -63,24 +65,23 @@ void reportSensorValues() {
 		Serial.printf("Humidity %s sent\n\r", humidity);
 	}
 }
+*/
 
 #include "mqtt_status_telemetry.h"
-#include "Connections.h"
+#include "connections.h"
 #include "BLE.h"
 
 void setup() {
 
   Serial.begin(115200);
+	Serial2.begin(115200);
+	r200_version();
 
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, LED_ON);
 
   mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
   wifiReconnectTimer = xTimerCreate("wifiTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToWifi));
-
-  #ifdef htuSensorTopic
-		sensor_setup();
-	#endif
 
   WiFi.onEvent(WiFiEvent);
 
@@ -113,6 +114,7 @@ void setup() {
 }
 
 void loop() {
+	multi_read_processing();
 	TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
 	TIMERG0.wdt_feed=1;
 	TIMERG0.wdt_wprotect=0;
