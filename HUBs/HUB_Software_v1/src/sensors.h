@@ -1,11 +1,12 @@
 /*
 Vars that are decleared in global scope
 float microparticle
+string rfid_id
 
 */
 
 #include "sensors/R200.h"
-#include "sensors/gp2y10h1.h"
+#include "sensors/gp2y1051.h"
 
 void particle_setup(){
   Serial1.begin(2400);

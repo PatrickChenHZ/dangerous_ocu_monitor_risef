@@ -46,12 +46,13 @@ TaskHandle_t BLEScan;
 
 //Global Vars to hold data
 float microparticle;
+String rfid_id = "";
 
 #include "distance_alg.h"
 
 /*
 void reportSensorValues() {
-	char temp[8];
+	char temp[8]
 	char humidity[8];
 
 	dtostrf(getTemp(), 0, 1, temp); 						// convert float to string with one decimal place precision
