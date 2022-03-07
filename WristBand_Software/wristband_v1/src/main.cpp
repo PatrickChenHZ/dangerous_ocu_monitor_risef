@@ -1,3 +1,5 @@
+#define VERSION "1.1"
+
 #include <Arduino.h>
 #include <pcf8563.h>
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
@@ -566,6 +568,7 @@ void loop() {
     notpermittedzone();
   }
 
+  //have the intention to move this to a task, so it does not block main loop
   getbiological();
 
 

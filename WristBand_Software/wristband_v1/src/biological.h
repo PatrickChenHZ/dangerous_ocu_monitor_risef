@@ -35,6 +35,13 @@ static double eir = 0.0; //estimated lowpass filtered IR signal to find falling 
 static double firrate = 0.85; //IR filter coefficient to remove notch ,should be smaller than frate
 static double eir_prev = 0.0;
 
+double arrspo2[100];
+double arrheartrate[100];
+int totalsamplespo2 = 0;
+int totalsampleheartrate = 0;
+
+double finalspo2;
+double finalheartrate;
 
 
 #define TIMETOBOOT 3000 // wait for this time(msec) to output SpO2
@@ -224,8 +231,13 @@ void updatebio_v2(){
 
       Serial.print("Heart Rate: ");
       Serial.println(Ebpm);
-      bloodoxy = SpO2;
-      pulse_bpm = Ebpm;
+
+      //it is expected this algrithm does not throw null/out of range datas, so all data is admitted to array
+      arrspo2[totalsamplespo2] = ESpO2;
+      arrheartrate[totalsampleheartrate] = Ebpm;
+      totalsamplespo2++;
+      totalsampleheartrate++;
+
       //sendSPOData(ESpO2);
       break;
     }
@@ -289,6 +301,39 @@ void biofilter(){
 }
 */
 
+void biofinalize_v2(){
+  //very simple finalizer,this only remove min and max then average entire array
+  double minhr=arrheartrate[0],maxhr=arrheartrate[0],minbo=arrspo2[0],maxbo=arrspo2[0];
+  double sumhr=0,sumbo=0;
+  for(int k=0;k<totalsamplespo2;k++){
+    sumbo = sumbo + arrspo2[k];
+    if(arrspo2[k] > maxbo){
+      maxbo = arrspo2[k];
+    }
+    if(arrspo2[k] < minbo){
+      minbo = arrspo2[k];
+    }
+  }
+  for(int k=0;k<totalsampleheartrate;k++){
+    sumhr = sumhr + arrheartrate[k];
+    if(arrheartrate[k] > maxhr){
+      maxhr = arrheartrate[k];
+    }
+    if(arrheartrate[k] < minhr){
+      minhr = arrheartrate[k];
+    }
+  }
+  finalspo2 = (sumbo - minbo - maxbo)/(totalsamplespo2 - 2);
+  finalheartrate = (sumhr - minhr - maxhr)/(totalsampleheartrate - 2);
+  //reset vars
+  totalsamplespo2=0;
+  totalsampleheartrate=0;
+}
+
+void pub_bio_data(){
+  pubstr(String(pulse_bpm,2),"clients/wb/wb1upstream1/heartrate");
+  pubstr(String(bloodoxy,2),"clients/wb/wb1upstream1/spo2");
+}
 
 void getbiological(){
     //45 sec per reading
@@ -308,7 +353,6 @@ void getbiological(){
     if(startpulse){
         //per reading only last 10sec
         if(lastpulse + 10000 > millis()){
-            //particleSensor.wakeUp();
             Serial.println("collecting pulse");
             //updatebiological();
             updatebio_v2();
@@ -318,12 +362,18 @@ void getbiological(){
             particleSensor.shutDown();
             Serial.println("Finished.");
             //biofilter();
+            biofinalize_v2();
             Serial.print("Pulse: ");
-            Serial.print(pulse_bpm);
+            Serial.print(finalheartrate);
             //sprintf(buf, "%lu\n", pulse_bpm); Serial.println(buf);
             Serial.print("Blood Oxygen: ");
-            Serial.println(bloodoxy);
+            Serial.println(finalspo2);
             //sprintf(buf, "%lu\n", bloodoxy); Serial.println(buf);
+            //commit to global
+            bloodoxy = finalspo2;
+            pulse_bpm = finalheartrate;
+            pub_bio_data();
+            //end of flag
             startpulse = false;
         }
     }

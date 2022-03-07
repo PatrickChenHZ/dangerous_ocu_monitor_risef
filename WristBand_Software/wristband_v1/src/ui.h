@@ -66,13 +66,18 @@ void infoscreen(){
   tft.setTextColor(TFT_WHITE);
   tft.setTextSize(1);
   tft.drawString("Version",0, 10);
-  tft.drawString("1.1",0, 20);
+  tft.drawString(VERSION,0, 20);
   tft.drawString("Battery",0, 30);
   tft.drawString("NULL",0, 40);
   tft.drawString("User ID",0, 50);
-  tft.drawString("01",0, 60);
+  tft.drawString(user,0, 60);
   tft.drawString("BLE ID",0, 70);
-  tft.drawString("d8a01d5b4636",0, 80);
+  tft.drawString(hwuuid,0, 80);
+  tft.drawString("Heart Rate",0, 90);
+  tft.drawString(String(pulse_bpm,2),0, 100);
+  tft.drawString("Blood Oxygen",0, 110);
+  tft.drawString(String(bloodoxy,2),0, 120);
+
   settimeout(10);
 }
 
