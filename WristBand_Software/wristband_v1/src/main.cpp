@@ -53,6 +53,7 @@ TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in User_Setup.h
 PCF8563_Class rtc;
 WiFiManager wifiManager;
 TaskHandle_t Mqttthread;
+TaskHandle_t pulsethread;
 MPU9250_asukiaaa myIMU;
 MAX30105 particleSensor;
 
@@ -376,6 +377,7 @@ void mqtt_loop(void * unused){
 #include "handler.h"
 
 //#include "imu_sensor.h"
+#include "biological.h"
 
 void setup() {
   Serial.begin(115200);
@@ -476,10 +478,17 @@ void setup() {
       &Mqttthread,  //Task handle.
       0); // Core where the task should run
 
+  xTaskCreatePinnedToCore(
+      pulse_loop, // Function to implement the task
+      "pulse_Loop", // Name of the task
+      10000,  // Stack size in words
+      NULL,  // Task input parameter
+      0,  // Priority of the task
+      &pulsethread,  //Task handle.
+      0); // Core where the task should run
 }
 
 #include "fall_detection.h"
-#include "biological.h"
 
 void loop() {
   //warning 50ms delay included in this loop
@@ -569,7 +578,7 @@ void loop() {
   }
 
   //have the intention to move this to a task, so it does not block main loop
-  getbiological();
+  //getbiological();
 
 
   /*

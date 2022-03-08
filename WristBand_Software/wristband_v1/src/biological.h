@@ -35,8 +35,8 @@ static double eir = 0.0; //estimated lowpass filtered IR signal to find falling 
 static double firrate = 0.85; //IR filter coefficient to remove notch ,should be smaller than frate
 static double eir_prev = 0.0;
 
-double arrspo2[100];
-double arrheartrate[100];
+double arrspo2[30];
+double arrheartrate[30];
 int totalsamplespo2 = 0;
 int totalsampleheartrate = 0;
 
@@ -223,14 +223,14 @@ void updatebio_v2(){
       double R = (sqrt(sumredrms) / avered) / (sqrt(sumirrms) / aveir);
       SpO2 = -23.3 * (R - 0.4) + 100;
       ESpO2 = FSpO2 * ESpO2 + (1.0 - FSpO2) * SpO2;
-      Serial.print("SPO2: ");
-      Serial.print(SpO2);Serial.print(",");Serial.print(ESpO2);
-      Serial.print(" BPM : "); Serial.print(Ebpm);Serial.print(", R:");
-      Serial.println(R);
+      //Serial.print("SPO2: ");
+      //Serial.print(SpO2);Serial.print(",");Serial.print(ESpO2);
+      //Serial.print(" BPM : "); //Serial.print(Ebpm);//Serial.print(", R:");
+      //Serial.println(R);
       sumredrms = 0.0; sumirrms = 0.0; i = 0;
 
-      Serial.print("Heart Rate: ");
-      Serial.println(Ebpm);
+      //Serial.print("Heart Rate: ");
+      //Serial.println(Ebpm);
 
       //it is expected this algrithm does not throw null/out of range datas, so all data is admitted to array
       arrspo2[totalsamplespo2] = ESpO2;
@@ -331,23 +331,24 @@ void biofinalize_v2(){
 }
 
 void pub_bio_data(){
-  pubstr(String(pulse_bpm,2),"clients/wb/wb1upstream1/heartrate");
-  pubstr(String(bloodoxy,2),"clients/wb/wb1upstream1/spo2");
+  pubstr(String(pulse_bpm,2),"clients/wb/wb1hr");
+  pubstr(String(bloodoxy,2),"clients/wb/wb1spo2");
 }
 
+/*
 void getbiological(){
     //45 sec per reading
     //init is code v1 only
-    /*
-    if(!pulsesensorinit){
-      biosensorinit();
-      pulsesensorinit = true;
-    }
-    */
+
+    //if(!pulsesensorinit){
+    //  biosensorinit();
+    //  pulsesensorinit = true;
+    //}
+
     if((millis() > lastpulse + 45000) & !startpulse){
         startpulse = true;
         lastpulse = millis();
-        particleSensor.wakeUp();
+        //particleSensor.wakeUp();
         Serial.println("New Pulse round");
     }
     if(startpulse){
@@ -359,7 +360,7 @@ void getbiological(){
         }
         else{
             //pulse period expired
-            particleSensor.shutDown();
+            //particleSensor.shutDown();
             Serial.println("Finished.");
             //biofilter();
             biofinalize_v2();
@@ -377,4 +378,36 @@ void getbiological(){
             startpulse = false;
         }
     }
+}
+*/
+
+
+unsigned long last_calc_bio = 0;
+
+//constant reading, calculate average evry 25 second
+void getbiological(){
+    if(last_calc_bio + 25000 < millis()){
+      biofinalize_v2();
+      Serial.print("Pulse: ");
+      Serial.print(finalheartrate);
+      Serial.print("Blood Oxygen: ");
+      Serial.println(finalspo2);
+      //commit to global
+      bloodoxy = finalspo2;
+      pulse_bpm = finalheartrate;
+      pub_bio_data();
+      last_calc_bio = millis();
+    }
+    else{
+      updatebio_v2();
+    }
+}
+
+void pulse_loop(void * unused){
+  //try to keep this at end of loop
+  for(;;){
+    getbiological();
+    //purpose is to allow task schedular to do its job, delay() or yield() also works.
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+  }
 }
