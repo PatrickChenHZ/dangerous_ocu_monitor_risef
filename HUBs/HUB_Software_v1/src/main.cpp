@@ -19,8 +19,7 @@ extern "C" {
 #include "BLEEddystoneTLM.h"
 #include "BLEEddystoneURL.h"
 #include "configs.h"
-#include "sensors/gp2y1051.h"
-#include "sensors/R200.h"
+
 
 
 static const int scanTime = singleScanTime;
@@ -72,11 +71,13 @@ void reportSensorValues() {
 #include "connections.h"
 #include "BLE.h"
 
+#include "sensors/gp2y1051.h"
+#include "sensors/R200.h"
+
 void setup() {
 
   Serial.begin(115200);
 	Serial2.begin(115200);
-	r200_version();
 
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, LED_ON);
@@ -111,11 +112,12 @@ void setup() {
 		1,
 		&BLEScan,
 		0);
+	req_multi_read();
 
 }
 
 void loop() {
-	multi_read_processing();
+	r200_parse();
 	TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
 	TIMERG0.wdt_feed=1;
 	TIMERG0.wdt_wprotect=0;

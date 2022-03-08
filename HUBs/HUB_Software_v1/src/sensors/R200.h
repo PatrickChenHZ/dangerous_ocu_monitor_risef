@@ -23,8 +23,8 @@ void req_multi_read(int requests=65535){
 }
 
 void card_found(int bytenumber){
-  int datastart = 8;
-  int dataend = 19;
+  int datastart = 7;
+  int dataend = 18;
   String epc_id = "";
   for(int b=0;b<=bytenumber;b++){
     if(b>=datastart && b<=dataend){
@@ -33,18 +33,19 @@ void card_found(int bytenumber){
   }
   //set global var
   rfid_id = epc_id;
+  Serial.println(rfid_id);
 }
 
+boolean indata = false;
+int bytenumber = 0;
+String type = "";
 //constantly run this in main loop
 void r200_parse(){
-  boolean indata = false;
-  int bytenumber = 0;
   byte income;
-  String type = "";
   if (Serial2.available() > 0) {
     income = Serial2.read();
     if(income == 0xBB){
-      //strat of packet
+      //start of packet
       indata = true;
     }
     else if(income == 0x7E){
@@ -60,12 +61,13 @@ void r200_parse(){
     else{
       if(indata){
         response[bytenumber] = income;
-        bytenumber++;
         //Serial.print(income);
         //parse data type
         if(bytenumber == 1){
-          if(income == 0x27){
+          //Serial.println(income);
+          if(income == 0x22){
             //continuous read
+            //for somereaon it is 0x22 response
             type = "read";
           }
           if(income == 0x03){
@@ -77,6 +79,7 @@ void r200_parse(){
             type = "fail";
           }
         }
+        bytenumber++;
       }
     }
   }
