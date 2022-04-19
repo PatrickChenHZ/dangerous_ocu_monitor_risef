@@ -34,6 +34,10 @@ void card_found(int bytenumber){
   //set global var
   rfid_id = epc_id;
   Serial.println(rfid_id);
+  if(rfid_id == "2261281041440064410220244231" || rfid_id == "2261281041440080410216423371"){
+    buzz = true;
+    lasta = millis();
+  }
 }
 
 boolean indata = false;
