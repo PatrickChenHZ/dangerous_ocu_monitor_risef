@@ -47,6 +47,9 @@ TaskHandle_t BLEScan;
 float microparticle;
 String rfid_id = "";
 
+bool buzz = false;
+unsigned long lasta = 0;
+
 #include "distance_alg.h"
 
 /*
@@ -81,6 +84,8 @@ void setup() {
 
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, LED_ON);
+
+	pinMode(23,OUTPUT);
 
   mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
   wifiReconnectTimer = xTimerCreate("wifiTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToWifi));
@@ -118,6 +123,13 @@ void setup() {
 
 void loop() {
 	r200_parse();
+	if(buzz == true){
+		digitalWrite(23,HIGH);
+		if(lasta + 10000 <= millis()){
+			digitalWrite(23,LOW);
+			buzz = false;
+		}
+	}
 	TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
 	TIMERG0.wdt_feed=1;
 	TIMERG0.wdt_wprotect=0;
